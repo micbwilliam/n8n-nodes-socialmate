@@ -1,0 +1,97 @@
+{
+  "name": "Real Estate — WhatsApp AI Concierge (SocialMate + DeepSeek)",
+  "nodes": [
+    {
+      "parameters": {
+        "events": ["message.received"],
+        "options": {}
+      },
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "SocialMate Trigger",
+      "type": "n8n-nodes-socialmate.socialMateTrigger",
+      "typeVersion": 1,
+      "position": [-40, 300],
+      "webhookId": "socialmate-realestate-concierge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data.body }}",
+        "options": {
+          "systemMessage": "You are Maya, a friendly and professional real-estate concierge for Skyline Realty, chatting with prospective buyers and renters on WhatsApp.\n\nYour goals, in order:\n1. Greet warmly and briefly.\n2. Understand the lead's need: buy or rent, preferred area/neighbourhood, budget range, number of bedrooms, and move-in timeline.\n3. Answer questions about listings, neighbourhoods, pricing and the buying/renting process clearly and honestly.\n4. Once you know intent + area + budget + bedrooms, offer to book a viewing or hand off to a human agent, and ask for their preferred day and time.\n\nStyle: warm, concise and WhatsApp-appropriate — short paragraphs, no walls of text, an occasional emoji is fine. Never invent specific listing addresses, prices or availability you don't actually have; instead say a human agent will confirm exact options. If asked something outside real estate, gently steer back. Always reply in the same language the lead writes in."
+        }
+      },
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Real Estate Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "DeepSeek Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [120, 540]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('SocialMate Trigger').item.json.data.chatId }}"
+      },
+      "id": "44444444-4444-4444-8444-444444444444",
+      "name": "Per-Contact Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [340, 540]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "text": "={{ $json.output }}",
+        "sendOptions": {}
+      },
+      "id": "55555555-5555-4555-8555-555555555555",
+      "name": "Reply on WhatsApp",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [560, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Real Estate WhatsApp AI Concierge\n\n**Flow:** a lead messages your WhatsApp → DeepSeek-powered agent qualifies them (buy/rent, area, budget, beds, timeline) and answers questions → reply is sent back on WhatsApp. Memory is per-contact, so each lead has their own conversation.\n\n**Setup:**\n1. Open **SocialMate Trigger** → create/select a **SocialMate API** credential (Server URL `http://127.0.0.1:3456` if n8n is on the same machine, or your tunnel URL). Use an **admin**-scope key so the trigger can self-register.\n2. Open **DeepSeek Chat Model** → add your **DeepSeek API** key.\n3. **Save & Activate.** Message the connected WhatsApp number to test.",
+        "height": 300,
+        "width": 460
+      },
+      "id": "66666666-6666-4666-8666-666666666666",
+      "name": "How to use",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-40, -60]
+    }
+  ],
+  "connections": {
+    "SocialMate Trigger": {
+      "main": [[{ "node": "Real Estate Agent", "type": "main", "index": 0 }]]
+    },
+    "Real Estate Agent": {
+      "main": [[{ "node": "Reply on WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [[{ "node": "Real Estate Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Per-Contact Memory": {
+      "ai_memory": [[{ "node": "Real Estate Agent", "type": "ai_memory", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
