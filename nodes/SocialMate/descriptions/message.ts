@@ -1,0 +1,188 @@
+import type { INodeProperties } from 'n8n-workflow';
+
+export const messageOperations: INodeProperties[] = [
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		displayOptions: { show: { resource: ['message'] } },
+		options: [
+			{
+				name: 'Send Text',
+				value: 'sendText',
+				action: 'Send a text message',
+				description: 'Send a plain text WhatsApp message (available on every tier)',
+			},
+			{
+				name: 'Send Media',
+				value: 'sendMedia',
+				action: 'Send a media message',
+				description: 'Send an image, video, audio, document or sticker (requires Pro)',
+			},
+			{
+				name: 'Search / List',
+				value: 'search',
+				action: 'Search or list messages',
+				description: 'Read persisted message history, optionally full-text searched (requires Pro)',
+			},
+		],
+		default: 'sendText',
+	},
+];
+
+const chatIdProperty: INodeProperties = {
+	displayName: 'Chat ID / Phone Number',
+	name: 'chatId',
+	type: 'string',
+	default: '',
+	required: true,
+	placeholder: '15551234567 or 123456789@g.us',
+	description:
+		'Recipient: a phone number in international format (digits only, no +) for a 1:1 chat, or a group JID ending in @g.us',
+	displayOptions: { show: { resource: ['message'], operation: ['sendText', 'sendMedia'] } },
+};
+
+export const messageFields: INodeProperties[] = [
+	chatIdProperty,
+
+	// ── Send Text ──
+	{
+		displayName: 'Text',
+		name: 'text',
+		type: 'string',
+		typeOptions: { rows: 3 },
+		default: '',
+		required: true,
+		description: 'Message body (1–4096 characters)',
+		displayOptions: { show: { resource: ['message'], operation: ['sendText'] } },
+	},
+
+	// ── Send Media ──
+	{
+		displayName: 'Media Type',
+		name: 'mediaType',
+		type: 'options',
+		default: 'image',
+		options: [
+			{ name: 'Audio', value: 'audio' },
+			{ name: 'Document', value: 'document' },
+			{ name: 'Image', value: 'image' },
+			{ name: 'Sticker', value: 'sticker' },
+			{ name: 'Video', value: 'video' },
+		],
+		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'] } },
+	},
+	{
+		displayName: 'Media Source',
+		name: 'mediaSource',
+		type: 'options',
+		default: 'url',
+		options: [
+			{ name: 'URL', value: 'url', description: 'A public HTTPS URL the server will fetch' },
+			{ name: 'Binary Property', value: 'binary', description: 'Binary data from a previous node' },
+			{ name: 'Base64', value: 'base64', description: 'A base64-encoded string' },
+		],
+		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'] } },
+	},
+	{
+		displayName: 'URL',
+		name: 'mediaUrl',
+		type: 'string',
+		default: '',
+		placeholder: 'https://example.com/photo.jpg',
+		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'], mediaSource: ['url'] } },
+	},
+	{
+		displayName: 'Input Binary Field',
+		name: 'binaryPropertyName',
+		type: 'string',
+		default: 'data',
+		hint: 'The name of the input binary field containing the file to send',
+		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'], mediaSource: ['binary'] } },
+	},
+	{
+		displayName: 'Base64 Data',
+		name: 'mediaBase64',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'], mediaSource: ['base64'] } },
+	},
+	{
+		displayName: 'Additional Fields',
+		name: 'mediaOptions',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'] } },
+		options: [
+			{ displayName: 'Caption', name: 'caption', type: 'string', default: '', description: 'Caption shown with the media (≤4096 chars)' },
+			{ displayName: 'File Name', name: 'filename', type: 'string', default: '', description: 'Override the file name' },
+			{ displayName: 'MIME Type', name: 'mimetype', type: 'string', default: '', description: 'Override the detected MIME type' },
+		],
+	},
+
+	// ── Shared send options ──
+	{
+		displayName: 'Options',
+		name: 'sendOptions',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: { show: { resource: ['message'], operation: ['sendText', 'sendMedia'] } },
+		options: [
+			{
+				displayName: 'Priority',
+				name: 'priority',
+				type: 'options',
+				default: 2,
+				description: 'Used if the message is auto-queued by the anti-ban pipeline (Pro)',
+				options: [
+					{ name: 'Urgent', value: 0 },
+					{ name: 'High', value: 1 },
+					{ name: 'Normal', value: 2 },
+					{ name: 'Low', value: 3 },
+				],
+			},
+			{
+				displayName: 'Max Retries',
+				name: 'maxRetries',
+				type: 'number',
+				typeOptions: { minValue: 0, maxValue: 10 },
+				default: 3,
+				description: 'Retries if auto-queued (Pro)',
+			},
+		],
+	},
+
+	// ── Search / List ──
+	{
+		displayName: 'Filters',
+		name: 'searchFilters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		default: {},
+		displayOptions: { show: { resource: ['message'], operation: ['search'] } },
+		options: [
+			{ displayName: 'Chat ID', name: 'chatId', type: 'string', default: '', description: 'Restrict to one chat (phone digits or group JID)' },
+			{ displayName: 'Search Text', name: 'search', type: 'string', default: '', description: 'Full-text search across messages' },
+		],
+	},
+	{
+		displayName: 'Return All',
+		name: 'returnAll',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to return all results or only up to a given limit',
+		displayOptions: { show: { resource: ['message'], operation: ['search'] } },
+	},
+	{
+		displayName: 'Limit',
+		name: 'limit',
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		default: 50,
+		description: 'Max number of results to return',
+		displayOptions: { show: { resource: ['message'], operation: ['search'], returnAll: [false] } },
+	},
+];

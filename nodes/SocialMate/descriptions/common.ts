@@ -1,0 +1,50 @@
+import type { INodeProperties } from 'n8n-workflow';
+
+/** Resources that operate against a specific WhatsApp account. */
+export const ACCOUNT_SCOPED_RESOURCES = [
+	'message',
+	'chat',
+	'contact',
+	'group',
+	'media',
+	'sync',
+	'queue',
+	'account',
+];
+
+/**
+ * Shared account picker. Shown for every account-scoped resource. A few
+ * operations (account:getMany, queue global controls) ignore it; the node's
+ * execute() only reads it where the endpoint needs it, so leaving it set is
+ * harmless.
+ */
+export const accountIdProperty: INodeProperties = {
+	displayName: 'Account Name or ID',
+	name: 'accountId',
+	type: 'options',
+	typeOptions: { loadOptionsMethod: 'getAccounts' },
+	default: '',
+	description: 'WhatsApp account to use. Choose from the list (your SocialMate server must be reachable while configuring), or specify an ID using an expression. <a href="https://socialmate.app">Find IDs in SocialMate → Accounts</a>. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+	displayOptions: {
+		show: { resource: ACCOUNT_SCOPED_RESOURCES },
+		hide: { resource: ['account'], operation: ['getMany'] },
+	},
+};
+
+/** Standard "Return All / Limit" pair for list operations. */
+export const returnAllProperty: INodeProperties = {
+	displayName: 'Return All',
+	name: 'returnAll',
+	type: 'boolean',
+	default: false,
+	description: 'Whether to return all results or only up to a given limit',
+};
+
+export const limitProperty: INodeProperties = {
+	displayName: 'Limit',
+	name: 'limit',
+	type: 'number',
+	typeOptions: { minValue: 1 },
+	default: 50,
+	description: 'Max number of results to return',
+};

@@ -1,0 +1,10 @@
+{
+	"node": "n8n-nodes-base.socialMateTrigger",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Communication", "Marketing"],
+	"resources": {
+		"credentialDocumentation": [{ "url": "https://socialmate.app" }],
+		"primaryDocumentation": [{ "url": "https://socialmate.app" }]
+	}
+}

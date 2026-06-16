@@ -1,0 +1,60 @@
+{
+  "name": "n8n-nodes-socialmate",
+  "version": "1.0.0",
+  "description": "n8n community node for SocialMate — automate WhatsApp messaging through your self-hosted SocialMate desktop server (send/schedule/bulk messages, manage chats, contacts, groups, media, and react to incoming messages).",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "socialmate",
+    "whatsapp",
+    "automation",
+    "messaging"
+  ],
+  "license": "MIT",
+  "homepage": "https://socialmate.app",
+  "author": {
+    "name": "SocialMate",
+    "url": "https://socialmate.app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/socialmate/n8n-nodes-socialmate.git"
+  },
+  "engines": {
+    "node": ">=18.10"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && npm run lint"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/SocialMateApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/SocialMate/SocialMate.node.js",
+      "dist/nodes/SocialMateTrigger/SocialMateTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.3",
+    "gulp": "^5.0.0",
+    "n8n-workflow": "*",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}
