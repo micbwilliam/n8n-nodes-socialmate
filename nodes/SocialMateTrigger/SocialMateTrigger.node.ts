@@ -8,7 +8,7 @@ import type {
 } from 'n8n-workflow';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
-import { socialmateApiRequest, normalizeBaseUrl } from '../SocialMate/GenericFunctions';
+import { socialmateApiRequest } from '../SocialMate/GenericFunctions';
 
 /** Every event SocialMate can deliver. Pro-only ones are labelled. */
 const EVENT_OPTIONS: Array<{ name: string; value: string }> = [
@@ -42,14 +42,6 @@ const EVENT_OPTIONS: Array<{ name: string; value: string }> = [
 	{ name: 'License Deactivated', value: 'license.deactivated' },
 	{ name: 'License Tier Changed', value: 'license.tier_changed' },
 ];
-
-/**
- * Tunnel events the Trigger always subscribes to (on top of the user's
- * selection) so the app pushes quick-tunnel URL rotations here. These power
- * the auto-heal cache; webhook() suppresses them from the workflow output
- * unless the user explicitly selected them.
- */
-const BEACON_EVENTS = ['tunnel.url_changed', 'tunnel.started'];
 
 export class SocialMateTrigger implements INodeType {
 	description: INodeTypeDescription = {
@@ -124,20 +116,10 @@ export class SocialMateTrigger implements INodeType {
 
 			async create(this: IHookFunctions): Promise<boolean> {
 				const webhookUrl = this.getNodeWebhookUrl('default');
-				const userEvents = this.getNodeParameter('events', []) as string[];
+				const events = this.getNodeParameter('events', []) as string[];
 				const workflowName = this.getWorkflow().name ?? 'workflow';
 				const staticData = this.getWorkflowStaticData('node');
 				const secret = randomBytes(24).toString('hex');
-
-				// Always subscribe to the tunnel "beacon" events on top of the
-				// user's selection so the app pushes URL rotations here for
-				// auto-heal. An empty list already means "all events", so only
-				// augment a non-empty selection. The webhook() handler suppresses
-				// beacon-only events so they never spam the workflow.
-				const events =
-					userEvents.length === 0
-						? []
-						: Array.from(new Set([...userEvents, ...BEACON_EVENTS]));
 
 				const created = (await socialmateApiRequest.call(this, 'POST', '/v1/webhooks', {
 					label: `n8n: ${workflowName}`,
@@ -193,29 +175,6 @@ export class SocialMateTrigger implements INodeType {
 				res.status(401).json({ error: 'invalid_signature' });
 				return { noWebhookResponse: true };
 			}
-		}
-
-		// ── Beacon auto-heal: cache the current tunnel URL for action nodes ──
-		// Every SocialMate webhook payload carries the app's current tunnelUrl,
-		// so caching it on each delivery keeps action nodes pointed at the live
-		// address even after a quick tunnel rotates.
-		const tunnelUrl = normalizeBaseUrl(body.tunnelUrl as string);
-		if (tunnelUrl) {
-			const globalData = this.getWorkflowStaticData('global');
-			globalData.socialMateBaseUrl = tunnelUrl;
-		}
-
-		// ── Suppress beacon-only events ──
-		// tunnel.* events that the user didn't explicitly subscribe to are
-		// auto-subscribed purely for the auto-heal cache above — don't let them
-		// start the workflow (they have no chatId and would misfire the flow).
-		const userEvents = this.getNodeParameter('events', []) as string[];
-		const event = (body.event as string) ?? '';
-		const isUserSubscribed = userEvents.length === 0 || userEvents.includes(event);
-		if (!isUserSubscribed) {
-			const res = this.getResponseObject();
-			res.status(200).json({ ok: true, cachedTunnelUrl: tunnelUrl || null });
-			return { noWebhookResponse: true };
 		}
 
 		// ── Optional account filter ──

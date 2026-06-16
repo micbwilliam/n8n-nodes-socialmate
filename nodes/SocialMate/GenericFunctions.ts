@@ -30,40 +30,18 @@ export function normalizeBaseUrl(raw?: string | null): string {
 	return url.replace(/\/+$/, '');
 }
 
-/** Cloudflare quick-tunnel URLs are ephemeral — they rotate on every restart. */
-function isQuickTunnelUrl(url: string): boolean {
-	return /\.trycloudflare\.com/i.test(url);
-}
-
 /**
- * Resolve the base URL to call for this run.
+ * Resolve the base URL for this run.
  *
- * Priority (honors "named tunnel first" + quick-tunnel auto-heal):
- *   1. A stable named-tunnel hostname / explicit URL in the credential — always wins.
- *   2. The freshest tunnel URL the Trigger cached in workflow static data
- *      (only when the credential URL is a rotating quick tunnel or empty, and
- *      "Prefer live tunnel URL" is enabled).
- *   3. The credential URL as-entered (e.g. a quick tunnel with no cache yet).
- *   4. The localhost default.
+ * Only stable addresses are supported: a localhost address (app + n8n on the
+ * same machine) or a named-tunnel hostname. The value is simply the
+ * credential's Server URL (normalised), or the localhost default. Rotating
+ * quick tunnels (*.trycloudflare.com) are intentionally NOT supported — their
+ * URL changes on every restart and would leave a stored credential stale.
  */
 export async function resolveBaseUrl(this: RequestContext): Promise<string> {
 	const creds = await this.getCredentials(SOCIALMATE_CREDENTIAL);
-	const credUrl = normalizeBaseUrl(creds.baseUrl as string);
-	const preferTrigger = creds.preferTriggerUrl !== false;
-
-	let cached = '';
-	try {
-		const staticData = this.getWorkflowStaticData('global') as IDataObject;
-		cached = normalizeBaseUrl(staticData.socialMateBaseUrl as string);
-	} catch {
-		// Some contexts (e.g. credential test) have no workflow static data.
-	}
-
-	if (credUrl && !isQuickTunnelUrl(credUrl)) return credUrl;
-	if (preferTrigger && cached) return cached;
-	if (credUrl) return credUrl;
-	if (cached) return cached;
-	return DEFAULT_LOCAL_URL;
+	return normalizeBaseUrl(creds.baseUrl as string) || DEFAULT_LOCAL_URL;
 }
 
 /** Unwrap the SocialMate v1.1 response envelope (`{ data: ... }`). */

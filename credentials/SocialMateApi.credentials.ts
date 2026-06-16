@@ -34,7 +34,7 @@ export class SocialMateApi implements ICredentialType {
 			placeholder: 'https://api.your-domain.com',
 			required: true,
 			description:
-				'Base URL of your SocialMate server. Use your named-tunnel hostname (recommended — never rotates) or http://127.0.0.1:3456 when n8n runs on the same machine. Do not include a trailing slash. Find this in SocialMate → Settings → API → "Connect to n8n".',
+				'Base URL of your SocialMate server. Only stable URLs are supported: use http://127.0.0.1:3456 when n8n runs on the SAME machine as the app, or your NAMED-TUNNEL hostname (Pro) for a remote n8n. Quick/ephemeral tunnels (*.trycloudflare.com) are NOT supported — their URL rotates on every restart and breaks the saved connection. Do not include a trailing slash. Find this in SocialMate → Settings → API → "Connect to n8n".',
 		},
 		{
 			displayName: 'API Key',
@@ -45,14 +45,6 @@ export class SocialMateApi implements ICredentialType {
 			required: true,
 			description:
 				'API key generated in SocialMate → Settings → API. Use a key with the "admin" scope if you want the SocialMate Trigger to register its webhook automatically.',
-		},
-		{
-			displayName: 'Prefer Live Tunnel URL From Trigger',
-			name: 'preferTriggerUrl',
-			type: 'boolean',
-			default: true,
-			description:
-				'Whether to auto-heal a rotating quick-tunnel URL. When on, action nodes prefer the freshest tunnel URL cached by a SocialMate Trigger in the same workflow over a quick-tunnel URL stored above. A stable named-tunnel hostname is always used as-is.',
 		},
 	];
 
