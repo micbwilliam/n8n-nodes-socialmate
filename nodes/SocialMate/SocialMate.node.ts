@@ -183,6 +183,16 @@ export class SocialMate implements INodeType {
 							body.media = media;
 						}
 						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/messages`, body);
+					} else if (operation === 'getAiContext') {
+						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
+						const o = this.getNodeParameter('aiContextOptions', i, {}) as IDataObject;
+						const qs: IDataObject = { chatId };
+						if (o.maxMessages !== undefined) qs.maxMessages = o.maxMessages;
+						if (o.maxTokens !== undefined) qs.maxTokens = o.maxTokens;
+						if (o.format) qs.format = o.format;
+						if (o.includeTimestamps !== undefined) qs.includeTimestamps = o.includeTimestamps ? '1' : '0';
+						if (o.beforeTs) qs.beforeTs = o.beforeTs;
+						responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}/ai-context`, {}, qs);
 					} else {
 						const filters = this.getNodeParameter('searchFilters', i, {}) as IDataObject;
 						const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

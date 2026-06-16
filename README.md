@@ -19,6 +19,24 @@ npm install n8n-nodes-socialmate
 - **SocialMate** (action) — Message, Chat, Contact, Group, Media, Queue, Account, Sync, Webhook, API Key and System operations.
 - **SocialMate Trigger** — fires your workflow on SocialMate events (`message.received`, `message.sent`, `account.*`, `queue.*`, `sync.*`, `tunnel.*`, `license.*`, …). It self-registers its webhook with the server and verifies the HMAC signature on every delivery.
 
+### Build an AI agent with full chat memory — `Message → Get AI Context`
+
+The Trigger only hands your workflow the **single new message**. To give an AI agent the
+**whole conversation**, drop **`Message → Get AI Context`** between the Trigger and your
+AI Agent. It reads the chat's history from the SocialMate DB and returns it AI-ready:
+
+- `transcript` — a role-mapped, oldest→newest string to paste straight into the agent's
+  system message: `Conversation so far:\n{{ $json.transcript }}`.
+- `messages` — a structured `[{ role: 'user'|'assistant', name, content, ts }]` array for
+  chat-model / memory nodes.
+- `meta` — `{ totalMessages, returnedMessages, truncated, tokenEstimate, … }`.
+
+It role-maps automatically (the contact = `user`, your account = `assistant`), windows the
+history to a **token budget** (`maxTokens`, default 4000) and **message cap** (`maxMessages`,
+default 50), and labels media (`[image]`, `[voice]`, …). No separate memory node needed —
+each run pulls fresh, complete context. *(Requires SocialMate Pro — reading history.)* See
+[`examples/real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json).
+
 ## Connecting
 
 1. In the SocialMate app: **Settings → API → Connect to n8n**. Enable the API, start the tunnel, and create an API key (use an **admin**-scope key if you want the Trigger to register its webhook automatically).

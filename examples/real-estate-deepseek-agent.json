@@ -11,22 +11,40 @@
       "name": "SocialMate Trigger",
       "type": "n8n-nodes-socialmate.socialMateTrigger",
       "typeVersion": 1,
-      "position": [-40, 300],
+      "position": [-60, 300],
       "webhookId": "socialmate-realestate-concierge"
     },
     {
       "parameters": {
+        "resource": "message",
+        "operation": "getAiContext",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "aiContextOptions": {
+          "maxMessages": 40,
+          "maxTokens": 4000,
+          "format": "transcript"
+        }
+      },
+      "id": "77777777-7777-4777-8777-777777777777",
+      "name": "Get AI Context",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
         "promptType": "define",
-        "text": "={{ $json.data.body }}",
+        "text": "={{ $('SocialMate Trigger').item.json.data.body }}",
         "options": {
-          "systemMessage": "You are Maya, a friendly and professional real-estate concierge for Skyline Realty, chatting with prospective buyers and renters on WhatsApp.\n\nYour goals, in order:\n1. Greet warmly and briefly.\n2. Understand the lead's need: buy or rent, preferred area/neighbourhood, budget range, number of bedrooms, and move-in timeline.\n3. Answer questions about listings, neighbourhoods, pricing and the buying/renting process clearly and honestly.\n4. Once you know intent + area + budget + bedrooms, offer to book a viewing or hand off to a human agent, and ask for their preferred day and time.\n\nStyle: warm, concise and WhatsApp-appropriate — short paragraphs, no walls of text, an occasional emoji is fine. Never invent specific listing addresses, prices or availability you don't actually have; instead say a human agent will confirm exact options. If asked something outside real estate, gently steer back. Always reply in the same language the lead writes in."
+          "systemMessage": "=You are Maya, a friendly and professional real-estate concierge for Skyline Realty, chatting with prospective buyers and renters on WhatsApp.\n\nYour goals, in order:\n1. Greet warmly and briefly.\n2. Understand the lead's need: buy or rent, preferred area/neighbourhood, budget range, number of bedrooms, and move-in timeline.\n3. Answer questions about listings, neighbourhoods, pricing and the buying/renting process clearly and honestly.\n4. Once you know intent + area + budget + bedrooms, offer to book a viewing or hand off to a human agent, and ask for their preferred day and time.\n\nStyle: warm, concise and WhatsApp-appropriate — short paragraphs, no walls of text, an occasional emoji is fine. Never invent specific listing addresses, prices or availability you don't actually have; instead say a human agent will confirm exact options. If asked something outside real estate, gently steer back. Always reply in the same language the lead writes in.\n\n--- Conversation so far (oldest to newest) ---\n{{ $json.transcript }}\n--- End of history ---\n\nUse the history above to stay consistent and avoid re-asking what the lead already told you. Now reply to their latest message."
         }
       },
       "id": "22222222-2222-4222-8222-222222222222",
       "name": "Real Estate Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [220, 300]
+      "position": [440, 300]
     },
     {
       "parameters": {
@@ -36,18 +54,7 @@
       "name": "DeepSeek Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
       "typeVersion": 1,
-      "position": [120, 540]
-    },
-    {
-      "parameters": {
-        "sessionIdType": "customKey",
-        "sessionKey": "={{ $('SocialMate Trigger').item.json.data.chatId }}"
-      },
-      "id": "44444444-4444-4444-8444-444444444444",
-      "name": "Per-Contact Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.4,
-      "position": [340, 540]
+      "position": [360, 540]
     },
     {
       "parameters": {
@@ -62,23 +69,26 @@
       "name": "Reply on WhatsApp",
       "type": "n8n-nodes-socialmate.socialMate",
       "typeVersion": 1,
-      "position": [560, 300]
+      "position": [780, 300]
     },
     {
       "parameters": {
-        "content": "## Real Estate WhatsApp AI Concierge\n\n**Flow:** a lead messages your WhatsApp → DeepSeek-powered agent qualifies them (buy/rent, area, budget, beds, timeline) and answers questions → reply is sent back on WhatsApp. Memory is per-contact, so each lead has their own conversation.\n\n**Setup:**\n1. Open **SocialMate Trigger** → create/select a **SocialMate API** credential (Server URL `http://127.0.0.1:3456` if n8n is on the same machine, or your tunnel URL). Use an **admin**-scope key so the trigger can self-register.\n2. Open **DeepSeek Chat Model** → add your **DeepSeek API** key.\n3. **Save & Activate.** Message the connected WhatsApp number to test.",
-        "height": 300,
-        "width": 460
+        "content": "## Real Estate WhatsApp AI Concierge\n\n**Flow:** a lead messages your WhatsApp → **Get AI Context** pulls the whole conversation from the SocialMate DB (role-mapped, token-windowed) → DeepSeek agent answers with full memory → reply is sent back on WhatsApp.\n\nThe agent gets the entire thread as a transcript in its system message, so it never re-asks what the lead already said — no separate memory node needed.\n\n**Setup:**\n1. **SocialMate Trigger / Get AI Context / Reply** → create one **SocialMate API** credential (Server URL `http://127.0.0.1:3456` if n8n is on the same machine, or your named-tunnel hostname). Use an **admin**-scope key. *(Get AI Context + history are Pro features.)*\n2. **DeepSeek Chat Model** → add your **DeepSeek API** key.\n3. **Save & Activate**, then message the connected WhatsApp number to test — send two messages, then a follow-up that refers back, and watch it remember.",
+        "height": 320,
+        "width": 480
       },
       "id": "66666666-6666-4666-8666-666666666666",
       "name": "How to use",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-40, -60]
+      "position": [-60, -80]
     }
   ],
   "connections": {
     "SocialMate Trigger": {
+      "main": [[{ "node": "Get AI Context", "type": "main", "index": 0 }]]
+    },
+    "Get AI Context": {
       "main": [[{ "node": "Real Estate Agent", "type": "main", "index": 0 }]]
     },
     "Real Estate Agent": {
@@ -86,9 +96,6 @@
     },
     "DeepSeek Chat Model": {
       "ai_languageModel": [[{ "node": "Real Estate Agent", "type": "ai_languageModel", "index": 0 }]]
-    },
-    "Per-Contact Memory": {
-      "ai_memory": [[{ "node": "Real Estate Agent", "type": "ai_memory", "index": 0 }]]
     }
   },
   "settings": {

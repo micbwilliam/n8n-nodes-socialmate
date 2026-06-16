@@ -9,10 +9,16 @@ export const messageOperations: INodeProperties[] = [
 		displayOptions: { show: { resource: ['message'] } },
 		options: [
 			{
-				name: 'Send Text',
-				value: 'sendText',
-				action: 'Send a text message',
-				description: 'Send a plain text WhatsApp message (available on every tier)',
+				name: 'Get AI Context',
+				value: 'getAiContext',
+				action: 'Get AI conversation context',
+				description: 'Role-mapped, token-windowed transcript + messages of a chat, ready to feed an AI agent (requires Pro)',
+			},
+			{
+				name: 'Search / List',
+				value: 'search',
+				action: 'Search or list messages',
+				description: 'Read persisted message history, optionally full-text searched (requires Pro)',
 			},
 			{
 				name: 'Send Media',
@@ -21,10 +27,10 @@ export const messageOperations: INodeProperties[] = [
 				description: 'Send an image, video, audio, document or sticker (requires Pro)',
 			},
 			{
-				name: 'Search / List',
-				value: 'search',
-				action: 'Search or list messages',
-				description: 'Read persisted message history, optionally full-text searched (requires Pro)',
+				name: 'Send Text',
+				value: 'sendText',
+				action: 'Send a text message',
+				description: 'Send a plain text WhatsApp message (available on every tier)',
 			},
 		],
 		default: 'sendText',
@@ -39,8 +45,8 @@ const chatIdProperty: INodeProperties = {
 	required: true,
 	placeholder: '15551234567 or 123456789@g.us',
 	description:
-		'Recipient: a phone number in international format (digits only, no +) for a 1:1 chat, or a group JID ending in @g.us',
-	displayOptions: { show: { resource: ['message'], operation: ['sendText', 'sendMedia'] } },
+		'A phone number in international format (digits only, no +) for a 1:1 chat, or a group JID ending in @g.us',
+	displayOptions: { show: { resource: ['message'], operation: ['sendText', 'sendMedia', 'getAiContext'] } },
 };
 
 export const messageFields: INodeProperties[] = [
@@ -184,5 +190,60 @@ export const messageFields: INodeProperties[] = [
 		default: 50,
 		description: 'Max number of results to return',
 		displayOptions: { show: { resource: ['message'], operation: ['search'], returnAll: [false] } },
+	},
+
+	// ── Get AI Context ──
+	{
+		displayName: 'Options',
+		name: 'aiContextOptions',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: { show: { resource: ['message'], operation: ['getAiContext'] } },
+		options: [
+			{
+				displayName: 'Before Timestamp (Unix Ms)',
+				name: 'beforeTs',
+				type: 'number',
+				default: 0,
+				description:
+					'Exclude messages at/after this unix-ms. Pass the trigger message timestamp to drop the just-arrived message from the context.',
+			},
+			{
+				displayName: 'Format',
+				name: 'format',
+				type: 'options',
+				default: 'both',
+				description: 'Which shape to return',
+				options: [
+					{ name: 'Both', value: 'both' },
+					{ name: 'Messages Only', value: 'messages' },
+					{ name: 'Transcript Only', value: 'transcript' },
+				],
+			},
+			{
+				displayName: 'Include Timestamps',
+				name: 'includeTimestamps',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to prefix each transcript line with an ISO timestamp',
+			},
+			{
+				displayName: 'Max Messages',
+				name: 'maxMessages',
+				type: 'number',
+				typeOptions: { minValue: 1, maxValue: 500 },
+				default: 50,
+				description: 'Most-recent messages to consider (newest first)',
+			},
+			{
+				displayName: 'Max Tokens',
+				name: 'maxTokens',
+				type: 'number',
+				typeOptions: { minValue: 100, maxValue: 32000 },
+				default: 4000,
+				description: 'Approximate token budget for the included window',
+			},
+		],
 	},
 ];
