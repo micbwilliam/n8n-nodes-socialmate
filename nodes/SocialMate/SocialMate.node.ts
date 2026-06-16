@@ -192,6 +192,7 @@ export class SocialMate implements INodeType {
 						if (o.format) qs.format = o.format;
 						if (o.includeTimestamps !== undefined) qs.includeTimestamps = o.includeTimestamps ? '1' : '0';
 						if (o.beforeTs) qs.beforeTs = o.beforeTs;
+						if (o.order) qs.order = o.order;
 						responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}/ai-context`, {}, qs);
 					} else {
 						const filters = this.getNodeParameter('searchFilters', i, {}) as IDataObject;

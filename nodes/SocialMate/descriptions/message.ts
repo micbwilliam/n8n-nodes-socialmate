@@ -244,6 +244,17 @@ export const messageFields: INodeProperties[] = [
 				default: 4000,
 				description: 'Approximate token budget for the included window',
 			},
+			{
+				displayName: 'Order',
+				name: 'order',
+				type: 'options',
+				default: 'oldest',
+				description: 'Order of the returned messages/transcript',
+				options: [
+					{ name: 'Oldest First (Chronological)', value: 'oldest' },
+					{ name: 'Newest First', value: 'newest' },
+				],
+			},
 		],
 	},
 ];
