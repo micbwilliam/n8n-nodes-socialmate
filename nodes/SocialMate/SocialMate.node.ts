@@ -5,6 +5,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import {
 	socialmateApiRequest,
@@ -118,15 +119,39 @@ export class SocialMate implements INodeType {
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
 
-		// Per-account (v2): a connection's credential carries the bound account.
-		// Operations fall back to it when their "Account" field is left empty, so
-		// an account-scoped connection "just works" without re-selecting each time.
+		// Account scope (v2.1): the API key defines which accounts it may use.
+		// GET /v1/accounts is filtered server-side to exactly that set, so when an
+		// operation's Account field is left empty we resolve it from the scope:
+		// a single-account key auto-selects; a multi-account key requires a pick.
+		// (Back-compat: an old credential's `accountId` still acts as the default.)
 		const creds = await this.getCredentials(SOCIALMATE_CREDENTIAL);
-		const defaultAccountId = (creds.accountId as string) || '';
+		const legacyDefault = (creds.accountId as string) || '';
+		let scopeDefault = legacyDefault;
+		let scopeCount = legacyDefault ? 1 : -1;
+		if (!legacyDefault) {
+			try {
+				const accs = (await socialmateApiRequest.call(this, 'GET', '/v1/accounts')) as Array<{ id: string }>;
+				scopeCount = accs.length;
+				if (accs.length === 1) scopeDefault = accs[0].id;
+			} catch {
+				// Leave unresolved — a per-operation error is clearer than failing the whole run here.
+			}
+		}
 
 		for (let i = 0; i < items.length; i++) {
 			try {
-				const acc = () => (this.getNodeParameter('accountId', i, '') as string) || defaultAccountId;
+				const acc = (): string => {
+					const explicit = (this.getNodeParameter('accountId', i, '') as string) || '';
+					if (explicit) return explicit;
+					if (scopeDefault) return scopeDefault;
+					throw new NodeOperationError(
+						this.getNode(),
+						scopeCount > 1
+							? `Select an Account — this API key can use ${scopeCount} accounts, so one can't be chosen automatically.`
+							: 'No account is available for this API key. Check the connection in SocialMate → API & Integrations → n8n.',
+						{ itemIndex: i },
+					);
+				};
 				let responseData: unknown;
 				let binary: INodeExecutionData['binary'];
 
@@ -295,7 +320,7 @@ export class SocialMate implements INodeType {
 					} else if (operation === 'getItems' || operation === 'getBatches') {
 						const filters = operation === 'getItems' ? (this.getNodeParameter('itemFilters', i, {}) as IDataObject) : {};
 						const qs: IDataObject = { ...filters };
-						const accountId = (this.getNodeParameter('accountId', i, '') as string) || defaultAccountId;
+						const accountId = (this.getNodeParameter('accountId', i, '') as string) || scopeDefault;
 						if (accountId) qs.accountId = accountId;
 						const endpoint = operation === 'getItems' ? '/v1/queue/items' : '/v1/queue/batches';
 						const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

@@ -9,14 +9,13 @@ import type {
  * SocialMate API credential.
  *
  * Connects n8n to a self-hosted SocialMate desktop server over its local HTTP
- * API (default `http://127.0.0.1:3456`, or a Cloudflare tunnel URL for remote
+ * API (default `http://127.0.0.1:3456`, or a named-tunnel hostname for remote
  * reach). Authentication is a single API key sent in the `x-api-key` header.
  *
- * Connection strategy (see the node's `resolveBaseUrl`): a **named-tunnel
- * hostname** entered here is stable and always used. A rotating quick-tunnel
- * URL is auto-healed at run time from the SocialMate Trigger (which caches the
- * `tunnelUrl` carried in every webhook), provided "Prefer live tunnel URL" is
- * on.
+ * The API key carries its own **account scope** (This account / Selected / All),
+ * set when the connection is created in the app. The node never needs a
+ * "default account": each operation's Account dropdown is populated only with
+ * the accounts the key allows, and auto-resolves when the key is bound to one.
  */
 export class SocialMateApi implements ICredentialType {
 	name = 'socialMateApi';
@@ -44,15 +43,7 @@ export class SocialMateApi implements ICredentialType {
 			default: '',
 			required: true,
 			description:
-				'API key for this connection. The SocialMate connection wizard (API & Integrations → n8n → New connection) mints an account-scoped key with read+send+admin scope — paste it here. Account-scoped keys only work against their bound account; a global key can act on any account.',
-		},
-		{
-			displayName: 'Default Account ID',
-			name: 'accountId',
-			type: 'string',
-			default: '',
-			description:
-				'The WhatsApp account this connection is bound to (from the connection wizard\'s credential bundle). When set, node operations default to this account if their "Account" field is left empty. Optional for a global (unscoped) key.',
+				'API key from the SocialMate connection wizard (API & Integrations → n8n → New connection). The key itself defines which WhatsApp accounts you can use — This account, Selected, or All accounts. On each operation the Account dropdown lists only the accounts this key allows (auto-selected when the key is bound to a single account), so there is nothing else to configure here.',
 		},
 	];
 

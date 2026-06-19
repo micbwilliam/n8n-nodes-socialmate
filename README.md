@@ -14,28 +14,34 @@ Or self-hosted via npm:
 npm install n8n-nodes-socialmate
 ```
 
-## Per-account connections (v2)
+## Account scope (v2.1)
 
-SocialMate connections are now **per-account and self-contained**. In the app,
-open **API & Integrations → n8n → New connection**: it provisions an
-**account-scoped API key** (and, optionally, a webhook) bound to one WhatsApp
-number, and gives you a **credential bundle** `{ baseUrl, apiKey, accountId }`.
+Every SocialMate API key carries an **account scope**, chosen when you create the
+connection in the app (**API & Integrations → n8n → New connection**):
 
-Paste those three values into the **SocialMate API** credential here:
+| Scope | The key can act on | In the node |
+|---|---|---|
+| **This account** | exactly one account | the **Account** field auto-selects it — nothing to pick |
+| **Selected accounts** | a chosen subset | the **Account** dropdown lists only those accounts; pick one per operation |
+| **All accounts** | every account (incl. future) | the **Account** dropdown lists all; pick one per operation |
 
-- **Server URL** → `baseUrl`
-- **API Key** → `apiKey` (account-scoped — only works against its own account)
-- **Default Account ID** → `accountId`
+The credential is just two values — paste them from the wizard's bundle:
 
-With **Default Account ID** set, every operation defaults to that account when
-its **Account** field is left empty — so an account-scoped connection works out
-of the box. Run several connections (one credential each) for multiple accounts.
-A global (unscoped) key still works and can target any account via the node's
-**Account** picker.
+- **Server URL** → `baseUrl` (`http://127.0.0.1:3456` locally, or your named-tunnel hostname)
+- **API Key** → `apiKey`
 
-The **SocialMate Trigger** registers its webhook with that key, so the server
-automatically scopes deliveries to the connection's account — no extra filter
-needed.
+There is **no "Default Account ID"** anymore. The key already knows which
+accounts it may use: `GET /v1/accounts` is filtered to that set server-side, so
+the node's **Account** dropdown only ever shows accounts you can actually use,
+and auto-resolves when the key is bound to a single account. A multi-account key
+just asks you to pick the account on each operation.
+
+The **SocialMate Trigger** registers its webhook with that same key, so the
+server scopes deliveries to the key's accounts automatically — no manual filter
+needed (an optional one exists to further narrow an "All accounts" key).
+
+> Upgrading from v2.0: an old credential's `Default Account ID` is still honored
+> as a fallback, but you can clear it — the scope-aware Account picker replaces it.
 
 ## Nodes
 

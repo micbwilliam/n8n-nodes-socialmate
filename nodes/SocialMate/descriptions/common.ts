@@ -24,7 +24,7 @@ export const accountIdProperty: INodeProperties = {
 	type: 'options',
 	typeOptions: { loadOptionsMethod: 'getAccounts' },
 	default: '',
-	description: 'WhatsApp account to use. Leave empty to use the account this connection is bound to (the credential\'s "Default Account ID"); an account-scoped key can only act on its own account. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+	description: 'WhatsApp account to run this operation on. The list shows only accounts your API key is allowed to use; leave it empty to auto-select when the key is bound to a single account (a multi-account key requires a choice). Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 	displayOptions: {
 		show: { resource: ACCOUNT_SCOPED_RESOURCES },
 		hide: { resource: ['account'], operation: ['getMany'] },
