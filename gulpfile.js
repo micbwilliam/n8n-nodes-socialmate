@@ -4,7 +4,9 @@ const { src, dest } = require('gulp');
 // alongside the compiled JS so n8n can resolve the `icon: 'file:socialmate.svg'`
 // references and the node codex (categories, documentation links) at runtime.
 function buildIcons() {
-	return src('nodes/**/*.{png,svg,json}', { base: '.' }).pipe(dest('dist'));
+	return src(['nodes/**/*.{png,svg,json}', 'credentials/**/*.{png,svg}'], { base: '.' }).pipe(
+		dest('dist'),
+	);
 }
 
 exports['build:icons'] = buildIcons;

@@ -3,6 +3,7 @@ import type {
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
+	Icon,
 } from 'n8n-workflow';
 
 /**
@@ -21,6 +22,10 @@ export class SocialMateApi implements ICredentialType {
 	name = 'socialMateApi';
 
 	displayName = 'SocialMate API';
+
+	// Shown in the credentials list. The SVG ships next to this file in dist
+	// (see gulpfile `build:icons`). Without it n8n renders a generic "?" tile.
+	icon: Icon = 'file:socialmate.svg';
 
 	documentationUrl = 'https://socialmate.app/docs';
 
