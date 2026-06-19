@@ -24,7 +24,7 @@ export const accountIdProperty: INodeProperties = {
 	type: 'options',
 	typeOptions: { loadOptionsMethod: 'getAccounts' },
 	default: '',
-	description: 'WhatsApp account to use. Choose from the list (your SocialMate server must be reachable while configuring), or specify an ID using an expression. <a href="https://socialmate.app">Find IDs in SocialMate → Accounts</a>. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+	description: 'WhatsApp account to use. Leave empty to use the account this connection is bound to (the credential\'s "Default Account ID"); an account-scoped key can only act on its own account. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 	displayOptions: {
 		show: { resource: ACCOUNT_SCOPED_RESOURCES },
 		hide: { resource: ['account'], operation: ['getMany'] },

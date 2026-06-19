@@ -93,7 +93,7 @@ export class SocialMateTrigger implements INodeType {
 						name: 'accountId',
 						type: 'string',
 						default: '',
-						description: 'Only emit events for this account ID (leave empty for all accounts)',
+						description: 'Only emit events for this account ID (leave empty for all accounts). Not needed for an account-scoped connection: its key already restricts the registered webhook to its own account server-side — use this only with a global (unscoped) key.',
 					},
 				],
 			},

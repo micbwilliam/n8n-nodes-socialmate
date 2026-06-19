@@ -14,6 +14,29 @@ Or self-hosted via npm:
 npm install n8n-nodes-socialmate
 ```
 
+## Per-account connections (v2)
+
+SocialMate connections are now **per-account and self-contained**. In the app,
+open **API & Integrations → n8n → New connection**: it provisions an
+**account-scoped API key** (and, optionally, a webhook) bound to one WhatsApp
+number, and gives you a **credential bundle** `{ baseUrl, apiKey, accountId }`.
+
+Paste those three values into the **SocialMate API** credential here:
+
+- **Server URL** → `baseUrl`
+- **API Key** → `apiKey` (account-scoped — only works against its own account)
+- **Default Account ID** → `accountId`
+
+With **Default Account ID** set, every operation defaults to that account when
+its **Account** field is left empty — so an account-scoped connection works out
+of the box. Run several connections (one credential each) for multiple accounts.
+A global (unscoped) key still works and can target any account via the node's
+**Account** picker.
+
+The **SocialMate Trigger** registers its webhook with that key, so the server
+automatically scopes deliveries to the connection's account — no extra filter
+needed.
+
 ## Nodes
 
 - **SocialMate** (action) — Message, Chat, Contact, Group, Media, Queue, Account, Sync, Webhook, API Key and System operations.

@@ -44,7 +44,15 @@ export class SocialMateApi implements ICredentialType {
 			default: '',
 			required: true,
 			description:
-				'API key generated in SocialMate → Settings → API. Use a key with the "admin" scope if you want the SocialMate Trigger to register its webhook automatically.',
+				'API key for this connection. The SocialMate connection wizard (API & Integrations → n8n → New connection) mints an account-scoped key with read+send+admin scope — paste it here. Account-scoped keys only work against their bound account; a global key can act on any account.',
+		},
+		{
+			displayName: 'Default Account ID',
+			name: 'accountId',
+			type: 'string',
+			default: '',
+			description:
+				'The WhatsApp account this connection is bound to (from the connection wizard\'s credential bundle). When set, node operations default to this account if their "Account" field is left empty. Optional for a global (unscoped) key.',
 		},
 	];
 

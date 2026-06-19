@@ -10,6 +10,7 @@ import {
 	socialmateApiRequest,
 	socialmateApiRequestAllItems,
 	normalizeChatId,
+	SOCIALMATE_CREDENTIAL,
 } from './GenericFunctions';
 import { getAccounts, getChats, getGroups } from './methods/loadOptions';
 import { accountIdProperty } from './descriptions/common';
@@ -117,9 +118,15 @@ export class SocialMate implements INodeType {
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
 
+		// Per-account (v2): a connection's credential carries the bound account.
+		// Operations fall back to it when their "Account" field is left empty, so
+		// an account-scoped connection "just works" without re-selecting each time.
+		const creds = await this.getCredentials(SOCIALMATE_CREDENTIAL);
+		const defaultAccountId = (creds.accountId as string) || '';
+
 		for (let i = 0; i < items.length; i++) {
 			try {
-				const acc = () => this.getNodeParameter('accountId', i) as string;
+				const acc = () => (this.getNodeParameter('accountId', i, '') as string) || defaultAccountId;
 				let responseData: unknown;
 				let binary: INodeExecutionData['binary'];
 
@@ -288,7 +295,7 @@ export class SocialMate implements INodeType {
 					} else if (operation === 'getItems' || operation === 'getBatches') {
 						const filters = operation === 'getItems' ? (this.getNodeParameter('itemFilters', i, {}) as IDataObject) : {};
 						const qs: IDataObject = { ...filters };
-						const accountId = this.getNodeParameter('accountId', i, '') as string;
+						const accountId = (this.getNodeParameter('accountId', i, '') as string) || defaultAccountId;
 						if (accountId) qs.accountId = accountId;
 						const endpoint = operation === 'getItems' ? '/v1/queue/items' : '/v1/queue/batches';
 						const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
@@ -306,7 +313,7 @@ export class SocialMate implements INodeType {
 						// pause / resume
 						const scope = this.getNodeParameter('pauseScope', i, 'account') as string;
 						const body: IDataObject = {};
-						if (scope === 'account') body.accountId = this.getNodeParameter('accountId', i);
+						if (scope === 'account') body.accountId = acc();
 						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/queue/${operation}`, body);
 					}
 				}
