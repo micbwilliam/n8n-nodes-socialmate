@@ -82,6 +82,8 @@ A free **quick tunnel** gets a new `*.trycloudflare.com` URL on every restart. S
 
 Some operations require **SocialMate Pro** (media send, groups, scheduling/bulk import, message history/search, sync). Free covers text send, reads (chats/contacts/accounts), live webhooks and webhook/API-key management. Pro-only calls return a clear "requires Pro" error.
 
+Free is capped at 200 sends/day; Pro starts at 500/day per account and scales to **up to 5,000/day** in High-Volume Mode (after 72h warming) — so high-throughput workflows aren't bottlenecked.
+
 ## Development
 
 ```bash
