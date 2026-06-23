@@ -1,0 +1,57 @@
+{
+  "id": "socialmateScheduledBulk1",
+  "name": "Scheduled Bulk Send (Schedule → SocialMate Queue Bulk Import)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "days", "triggerAtHour": 9 }]
+        }
+      },
+      "id": "b1111111-1111-4111-8111-111111111111",
+      "name": "Every day at 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "resource": "queue",
+        "operation": "import",
+        "accountId": "YOUR_ACCOUNT_ID",
+        "template": "Hi {{name}}, a quick reminder about {{topic}}.",
+        "rows": "=[\n  { \"chatId\": \"15551234567\", \"fields\": { \"name\": \"Alice\", \"topic\": \"your appointment\" } },\n  { \"chatId\": \"15557654321\", \"fields\": { \"name\": \"Bob\", \"topic\": \"your renewal\" } }\n]",
+        "importOptions": {
+          "batchName": "Daily reminders",
+          "priority": 2
+        }
+      },
+      "id": "b2222222-2222-4222-8222-222222222222",
+      "name": "Queue Bulk Import",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Scheduled Bulk Send (Pro)\n\n**Flow:** a daily **Schedule Trigger** → **Queue Bulk Import** drops a batch into SocialMate's smart queue, which paces every send through the anti-ban engine and auto-retries any that get rate-limited.\n\n**Setup:**\n1. Create a **SocialMate API** credential and set **Account** in *Queue Bulk Import* (replace `YOUR_ACCOUNT_ID`, or it auto-resolves when the key is bound to one account).\n2. Replace the **Template** and **Rows** — usually you'd map `rows` from a Google Sheets / database node above instead of the hard-coded array.\n3. **Save & Activate.**\n\nBulk Import + scheduling are **Pro** features. Only message contacts who expect to hear from you.",
+        "height": 300,
+        "width": 440
+      },
+      "id": "b3333333-3333-4333-8333-333333333333",
+      "name": "How to use",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -60]
+    }
+  ],
+  "connections": {
+    "Every day at 09:00": {
+      "main": [[{ "node": "Queue Bulk Import", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

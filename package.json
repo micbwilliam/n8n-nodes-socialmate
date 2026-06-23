@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-socialmate",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "n8n community node for SocialMate — automate WhatsApp messaging through your self-hosted SocialMate desktop server (send/schedule/bulk messages, manage chats, contacts, groups, media, and react to incoming messages).",
   "keywords": [
     "n8n-community-node-package",
@@ -18,7 +18,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/socialmate/n8n-nodes-socialmate.git"
+    "url": "git+https://github.com/micbwilliam/n8n-nodes-socialmate.git"
+  },
+  "bugs": {
+    "url": "https://socialmate.app/support"
   },
   "engines": {
     "node": ">=18.10"

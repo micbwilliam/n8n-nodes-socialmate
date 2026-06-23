@@ -38,7 +38,7 @@ export class SocialMateApi implements ICredentialType {
 			placeholder: 'https://api.your-domain.com',
 			required: true,
 			description:
-				'Base URL of your SocialMate server. Only stable URLs are supported: use http://127.0.0.1:3456 when n8n runs on the SAME machine as the app, or your NAMED-TUNNEL hostname (Pro) for a remote n8n. Quick/ephemeral tunnels (*.trycloudflare.com) are NOT supported — their URL rotates on every restart and breaks the saved connection. Do not include a trailing slash. Find this in SocialMate → Settings → API → "Connect to n8n".',
+				'Base URL of your SocialMate server. Only stable URLs are supported: use http://127.0.0.1:3456 when n8n runs on the SAME machine as the app, or your NAMED-TUNNEL hostname (Pro) for a remote n8n. Quick/ephemeral tunnels (*.trycloudflare.com) are NOT supported — their URL rotates on every restart and breaks the saved connection. Do not include a trailing slash. Find this in SocialMate → API & Integrations → n8n → New connection.',
 		},
 		{
 			displayName: 'API Key',
