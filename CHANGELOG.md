@@ -4,6 +4,27 @@ All notable changes to **n8n-nodes-socialmate** are documented here. This projec
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] — 2026-06-24
+
+### Added
+- **README — Request & response examples** for the action node: Send Text, Send Media,
+  Get AI Context, Bulk Import, and Get Anti-Ban Status, each with a short "when to use" note
+  (matching the in-app Docs and website use-case guidance).
+- **Send outcomes** section documenting the `200` / `202` (Pro auto-queue) / `409` results and
+  the `429`-vs-auto-queue difference between Free and Pro.
+
+### Fixed / docs
+- **Webhook envelope now shows the `timestamp` field** (`{ version, event, timestamp, tunnelUrl,
+  data }`) in the description and the sample payload — it was previously omitted.
+- **Get AI Context** documents the full option set (`format`, `includeTimestamps`, `beforeTs`
+  in addition to `maxMessages` / `maxTokens` / `order`).
+- Noted that the legacy `POST /v1/accounts/:id/messages/media` route is deprecated and
+  intentionally not exposed as an operation (use **Send Media**).
+
+> Documentation-only release — no operation/event behaviour changed. Aligned with SocialMate
+> app `1.0.0-rc.4` per its `docs/CROSS-REPO-CONTRACT.md`; coverage remains all 55 endpoints and
+> all 29 trigger events.
+
 ## [2.3.0] — 2026-06-24
 
 ### Added

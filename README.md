@@ -94,7 +94,9 @@ AI Agent. It reads the chat's history from the SocialMate DB and returns it AI-r
 
 It role-maps automatically (the contact = `user`, your account = `assistant`), windows the
 history to a **token budget** (`maxTokens`, default 4000) and **message cap** (`maxMessages`,
-default 50), supports `order` (`oldest` | `newest`), and labels media (`[image]`, `[voice]`,
+default 50), supports `order` (`oldest` | `newest`), `format` (`both` | `messages` |
+`transcript`), `includeTimestamps`, and `beforeTs` (window to messages before a Unix-ms time),
+and labels media (`[image]`, `[voice]`,
 …). *(Requires SocialMate Pro — reading history.)* See
 [`examples/real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json).
 
@@ -114,13 +116,14 @@ The **SocialMate Trigger** covers all **29 events**. **9 are available on Free**
 - **Smart queue:** `queue.item.enqueued`, `queue.item.processing`, `queue.item.sent`, `queue.item.failed`, `queue.item.cancelled`, `queue.batch.created`, `queue.batch.completed`, `queue.batch.cancelled`
 - **License:** `license.activated`, `license.deactivated`, `license.tier_changed`
 
-Every delivery is a JSON envelope: `{ "version", "event", "tunnelUrl", "data": { … } }`. A
+Every delivery is a JSON envelope: `{ "version", "event", "timestamp", "tunnelUrl", "data": { … } }`. A
 `message.received` example:
 
 ```json
 {
   "version": 1,
   "event": "message.received",
+  "timestamp": "2026-06-03T12:00:00.000Z",
   "tunnelUrl": "https://your-name.example.com",
   "data": {
     "accountId": "acc_123",
@@ -136,6 +139,45 @@ Every delivery is a JSON envelope: `{ "version", "event", "tunnelUrl", "data": {
 ```
 
 In a workflow, read fields as `{{ $json.data.body }}`, `{{ $json.data.chatId }}`, etc.
+
+## Request & response examples
+
+The action node builds these requests for you; the JSON below shows the underlying SocialMate
+API shapes (handy when mapping fields). Responses are wrapped in the `{ "data": … }` envelope.
+
+**Message → Send Text** — when to use: the default outbound path; works on every tier.
+
+```json
+// request
+{ "chatId": "15551234567", "text": "Hello from n8n 👋" }
+// 200
+{ "data": { "sent": true, "messageId": "msg_abc", "chatId": "15551234567@s.whatsapp.net", "status": "sent" } }
+```
+
+**Message → Send Media** (Pro) — prefer a `url` so a rate-limited send can auto-queue (202):
+
+```json
+{ "chatId": "15551234567", "media": { "type": "image", "url": "https://example.com/p.jpg", "caption": "Invoice" } }
+```
+
+**Message → Get AI Context** (Pro) — when to use: give an AI agent the whole thread in one call:
+
+```json
+{ "data": { "account": { "id": "acct_1", "name": "Sales" }, "chat": { "id": "15551234567", "name": "Jane" }, "messages": [ { "role": "user", "content": "Hi" } ], "transcript": "Jane: Hi", "tokenEstimate": 8 } }
+```
+
+**Queue → Bulk Import** (Pro) — when to use: campaigns; one batch of up to 5000 templated rows:
+
+```json
+{
+  "template": "Hi {{name}}, your order {{order}} shipped 🚚",
+  "batchName": "June shipping notices",
+  "rows": [ { "chatId": "15551234567", "displayName": "Jane", "fields": { "name": "Jane", "order": "A-1001" } } ]
+}
+```
+
+**Account → Get Anti-Ban Status** — when to use: check headroom before a burst; if `paused` or a
+counter is near its `max`, back off (sending anyway just auto-queues on Pro or returns `429` on Free).
 
 ## API-key scopes
 
@@ -153,6 +195,20 @@ Keys carry one or more scopes; an operation that needs more than the key has ret
 | `402` | A Pro feature on a Free license — the response names the required feature. |
 | `403` | The key lacks the required scope (read / send / admin). |
 | `429` | Rate-limited — the node retries up to 3 times and honours `Retry-After`. |
+
+### Send outcomes
+
+A **Send Text / Send Media** call resolves one of three ways:
+
+- **`200`** — sent immediately (`{ sent: true, messageId, … }`).
+- **`202`** — anti-ban deferred it, so SocialMate **auto-queued** it and the worker retries
+  when the number is eligible (`{ queued: true, itemId, … }`). *Pro only* — on Free a blocked
+  send returns `429` instead (it is not queued).
+- **`409`** — the account isn't connected; link it in the app first.
+
+> The legacy **`POST /v1/accounts/:id/messages/media`** route is **deprecated** (no auto-queue,
+> sends a `Sunset` header) and is intentionally **not** exposed as an operation — use **Send
+> Media** (the unified endpoint) instead.
 
 ## License tiers & limits
 
