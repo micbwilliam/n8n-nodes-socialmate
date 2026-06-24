@@ -14,6 +14,7 @@ export const systemOperations: INodeProperties[] = [
 				action: 'Get capabilities',
 				description: 'Tier, feature flags, tunnel mode/URL and accounts (the integration handshake)',
 			},
+			{ name: 'Get Network Status', value: 'getNetworkStatus', action: 'Get network status', description: 'Tunnel URL + API port — a lighter probe than Get Status' },
 			{ name: 'Get Status', value: 'getStatus', action: 'Get status', description: 'Deep health: DB, tunnel, adapters, queue, webhooks' },
 			{ name: 'Get Version', value: 'getVersion', action: 'Get version', description: 'Build identity (version, runtime, git commit)' },
 		],

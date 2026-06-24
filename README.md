@@ -69,13 +69,13 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 | **Chat** | Get Many | — |
 | **Contact** | Get · Get Many | — |
 | **Group** | Get Many · Get · Get Invite Link · Leave | Create · Update Participants · Set Subject · Set Description |
-| **Media** | Get Many · Get · Get Stats · Download File · Force Download | Delete |
-| **Queue** | Get Status · Pause · Resume | Enqueue · Bulk Import · Get Items · Get Batches · Cancel/Retry Item · Cancel/Retry Batch |
+| **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Force Download · Get Download Queue · Delete | Run Cleanup |
+| **Queue** | Get Status · Get Items · Get Batches | Enqueue · Bulk Import · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
 | **Account** | Get Many · Get · Get Anti-Ban Status | — |
 | **Sync** | Get Status | Trigger |
 | **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries | — |
 | **API Key** | Get Many · Create · Rotate · Delete | — |
-| **System** | Get Capabilities · Get Status · Get Version | — |
+| **System** | Get Capabilities · Get Status · Get Network Status · Get Version | — |
 
 Every send still passes through SocialMate's anti-ban engine (rate limits, jitter, warming,
 risk checks), so a runaway workflow can't burn your number.
@@ -100,7 +100,11 @@ default 50), supports `order` (`oldest` | `newest`), and labels media (`[image]`
 
 ## Trigger events
 
-The **SocialMate Trigger** covers all **29 events** (9 available on Free):
+The **SocialMate Trigger** covers all **29 events**. **9 are available on Free** —
+`message.received`, `message.sent`, `account.connected`, `account.disconnected`,
+`tunnel.url_changed`, `tunnel.stopped`, `license.activated`, `license.deactivated`,
+`license.tier_changed`; the other 20 (incl. `tunnel.started` and the High-Volume Mode
+`account.danger_mode_*` events) require Pro and are labelled `(Pro)` in the picker:
 
 - **Messaging:** `message.received`, `message.sent`
 - **Accounts:** `account.connected`, `account.disconnected`, `account.banned`, `contacts.updated`, `account.danger_mode_enabled`, `account.danger_mode_disabled`

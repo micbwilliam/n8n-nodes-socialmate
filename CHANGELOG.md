@@ -4,6 +4,27 @@ All notable changes to **n8n-nodes-socialmate** are documented here. This projec
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] — 2026-06-24
+
+### Added
+- Four operations to cover the rest of the SocialMate API: **System → Get Network Status**
+  (`GET /v1/network/status`), **Media → Download Thumbnail** (`GET …/media/:id/thumbnail`),
+  **Media → Get Download Queue** (`GET /v1/media/queue`), and **Media → Run Cleanup**
+  (`POST /v1/media/cleanup`, Pro).
+
+### Fixed
+- **Trigger tier labels now match the app.** `tunnel.started` is Pro (was unlabelled, so the
+  picker implied 10 Free events — it is 9). The High-Volume Mode events are renamed to
+  **High-Volume Mode Enabled/Disabled** (wire names `account.danger_mode_*` unchanged).
+- **Queue / Media tier corrections** to match the server's actual gates: Queue **Get Items**
+  and **Get Batches** are Free; Queue **Pause/Resume** require Pro; Media **Delete** is Free
+  (only the new server-wide **Run Cleanup** is Pro). The six genuinely-Pro queue operations
+  (cancel/retry item + batch, pause, resume) now carry a "(requires Pro)" hint.
+- README Free-vs-Pro matrix and trigger-events list updated to match; the 9 Free webhook
+  events are now listed explicitly.
+
+> Aligned with SocialMate app `1.0.0-rc.4` per its `docs/CROSS-REPO-CONTRACT.md`.
+
 ## [2.2.0] — 2026-06-23
 
 ### Added

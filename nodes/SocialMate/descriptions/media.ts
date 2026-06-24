@@ -10,10 +10,13 @@ export const mediaOperations: INodeProperties[] = [
 		options: [
 			{ name: 'Delete', value: 'delete', action: 'Delete a media file', description: 'Delete the file (metadata is kept)' },
 			{ name: 'Download File', value: 'getFile', action: 'Download a media file', description: 'Return the decrypted file as binary data' },
+			{ name: 'Download Thumbnail', value: 'getThumbnail', action: 'Download a thumbnail', description: 'Return the inline JPEG thumbnail as binary data' },
 			{ name: 'Force Download', value: 'forceDownload', action: 'Force a download', description: 'Enqueue a download to pre-cache the file' },
 			{ name: 'Get', value: 'get', action: 'Get media metadata', description: 'Get a single media item (metadata only)' },
+			{ name: 'Get Download Queue', value: 'getDownloadQueue', action: 'Get the download queue', description: 'Media downloader backlog (active/pending/failed) — server-wide' },
 			{ name: 'Get Many', value: 'getMany', action: 'Get many media items', description: 'List media with filters' },
 			{ name: 'Get Stats', value: 'getStats', action: 'Get media stats', description: 'Counts and bytes by type for the account' },
+			{ name: 'Run Cleanup', value: 'cleanup', action: 'Run media cleanup', description: 'Apply retention/quota rules now, server-wide (requires Pro)' },
 		],
 		default: 'getMany',
 	},
@@ -25,7 +28,7 @@ const mediaIdProperty: INodeProperties = {
 	type: 'string',
 	default: '',
 	required: true,
-	displayOptions: { show: { resource: ['media'], operation: ['get', 'getFile', 'forceDownload', 'delete'] } },
+	displayOptions: { show: { resource: ['media'], operation: ['get', 'getFile', 'getThumbnail', 'forceDownload', 'delete'] } },
 };
 
 export const mediaFields: INodeProperties[] = [
@@ -37,7 +40,7 @@ export const mediaFields: INodeProperties[] = [
 		default: 'data',
 		required: true,
 		hint: 'The name of the output binary field to put the downloaded file in',
-		displayOptions: { show: { resource: ['media'], operation: ['getFile'] } },
+		displayOptions: { show: { resource: ['media'], operation: ['getFile', 'getThumbnail'] } },
 	},
 	{
 		displayName: 'Filters',

@@ -157,8 +157,13 @@ export class SocialMate implements INodeType {
 
 				// ─── System ───────────────────────────────────────────────
 				if (resource === 'system') {
-					const path = operation === 'getCapabilities' ? '/v1/capabilities' : operation === 'getStatus' ? '/v1/status' : '/v1/version';
-					responseData = await socialmateApiRequest.call(this, 'GET', path);
+					const systemPaths: Record<string, string> = {
+						getCapabilities: '/v1/capabilities',
+						getStatus: '/v1/status',
+						getVersion: '/v1/version',
+						getNetworkStatus: '/v1/network/status',
+					};
+					responseData = await socialmateApiRequest.call(this, 'GET', systemPaths[operation] ?? '/v1/version');
 				}
 
 				// ─── Account ──────────────────────────────────────────────
@@ -271,12 +276,24 @@ export class SocialMate implements INodeType {
 						responseData = await socialmateApiRequestAllItems.call(this, base, qs, returnAll, limit);
 					} else if (operation === 'getStats') {
 						responseData = await socialmateApiRequest.call(this, 'GET', `${base}/stats`);
+					} else if (operation === 'getDownloadQueue') {
+						// Server-wide download queue — not account-scoped.
+						responseData = await socialmateApiRequest.call(this, 'GET', '/v1/media/queue');
+					} else if (operation === 'cleanup') {
+						// Server-wide retention/quota sweep (Pro). 402 if Free.
+						responseData = await socialmateApiRequest.call(this, 'POST', '/v1/media/cleanup');
 					} else {
 						const mediaId = this.getNodeParameter('mediaId', i) as string;
 						if (operation === 'get') responseData = await socialmateApiRequest.call(this, 'GET', `${base}/${mediaId}`);
 						else if (operation === 'forceDownload') responseData = await socialmateApiRequest.call(this, 'POST', `${base}/${mediaId}/download`);
 						else if (operation === 'delete') responseData = await socialmateApiRequest.call(this, 'DELETE', `${base}/${mediaId}`);
-						else {
+						else if (operation === 'getThumbnail') {
+							// Stream the inline JPEG thumbnail into a binary field.
+							const buffer = (await socialmateApiRequest.call(this, 'GET', `${base}/${mediaId}/thumbnail`, {}, {}, { encoding: 'arraybuffer' })) as Buffer;
+							const prop = this.getNodeParameter('binaryPropertyName', i) as string;
+							binary = { [prop]: await this.helpers.prepareBinaryData(buffer, `${mediaId}.jpg`, 'image/jpeg') };
+							responseData = { id: mediaId, thumbnail: true };
+						} else {
 							// getFile — fetch metadata for name/mime, then stream the bytes into a binary field.
 							const meta = (await socialmateApiRequest.call(this, 'GET', `${base}/${mediaId}`)) as IDataObject;
 							const buffer = (await socialmateApiRequest.call(this, 'GET', `${base}/${mediaId}/file`, {}, {}, { encoding: 'arraybuffer' })) as Buffer;
