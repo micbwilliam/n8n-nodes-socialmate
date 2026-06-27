@@ -8,10 +8,10 @@ export const mediaOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['media'] } },
 		options: [
-			{ name: 'Delete', value: 'delete', action: 'Delete a media file', description: 'Delete the file (metadata is kept)' },
+			{ name: 'Delete', value: 'delete', action: 'Delete a media file', description: 'Delete the file (metadata is kept; requires Pro)' },
 			{ name: 'Download File', value: 'getFile', action: 'Download a media file', description: 'Return the decrypted file as binary data' },
 			{ name: 'Download Thumbnail', value: 'getThumbnail', action: 'Download a thumbnail', description: 'Return the inline JPEG thumbnail as binary data' },
-			{ name: 'Force Download', value: 'forceDownload', action: 'Force a download', description: 'Enqueue a download to pre-cache the file' },
+			{ name: 'Force Download', value: 'forceDownload', action: 'Force a download', description: 'Enqueue a download to pre-cache the file (requires Pro)' },
 			{ name: 'Get', value: 'get', action: 'Get media metadata', description: 'Get a single media item (metadata only)' },
 			{ name: 'Get Download Queue', value: 'getDownloadQueue', action: 'Get the download queue', description: 'Media downloader backlog (active/pending/failed) — server-wide' },
 			{ name: 'Get Many', value: 'getMany', action: 'Get many media items', description: 'List media with filters' },

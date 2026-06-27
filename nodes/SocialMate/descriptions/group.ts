@@ -12,7 +12,7 @@ export const groupOperations: INodeProperties[] = [
 			{ name: 'Get', value: 'get', action: 'Get a group', description: 'Get group metadata and participants' },
 			{ name: 'Get Invite Link', value: 'getInvite', action: 'Get invite link', description: 'Get the group invite code and link' },
 			{ name: 'Get Many', value: 'getMany', action: 'Get many groups', description: 'List all groups for the account' },
-			{ name: 'Leave', value: 'leave', action: 'Leave a group', description: 'Leave the group' },
+			{ name: 'Leave', value: 'leave', action: 'Leave a group', description: 'Leave the group (requires Pro)' },
 			{ name: 'Set Description', value: 'setDescription', action: 'Set group description', description: 'Update the group description (requires Pro)' },
 			{ name: 'Set Subject', value: 'setSubject', action: 'Set group subject', description: 'Rename the group (requires Pro)' },
 			{ name: 'Update Participants', value: 'updateParticipants', action: 'Update participants', description: 'Add, remove, promote or demote members (requires Pro)' },
