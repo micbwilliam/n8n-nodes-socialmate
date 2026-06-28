@@ -17,6 +17,7 @@
   "homepage": "https://socialmate.app",
   "author": {
     "name": "SocialMate",
+    "email": "admin@socialmate.app",
     "url": "https://socialmate.app"
   },
   "repository": {
@@ -37,6 +38,8 @@
     "lint": "eslint nodes credentials package.json",
     "lintfix": "eslint nodes credentials package.json --fix",
     "prepublishOnly": "npm run build && npm run lint",
+    "prepack": "node scripts/prepack.mjs",
+    "postpack": "node scripts/postpack.mjs",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run --no-ci"
   },

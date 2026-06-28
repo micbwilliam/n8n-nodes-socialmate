@@ -124,9 +124,11 @@ interface SocialMateRequestOptions {
 }
 
 /**
- * Core request helper. Adds the API key, resolves the base URL per-run,
- * retries on 429 honoring Retry-After, unwraps the v1.1 envelope, and maps
- * errors to friendly messages. Returns `data` by default.
+ * Core request helper. Authenticates via the SocialMate credential — the
+ * `x-api-key` header is injected from the credential's `authenticate`
+ * definition, never set manually here — resolves the base URL per-run, retries
+ * on 429 honoring Retry-After, unwraps the v1.1 envelope, and maps errors to
+ * friendly messages. Returns `data` by default.
  */
 export async function socialmateApiRequest(
 	this: RequestContext,
@@ -136,14 +138,12 @@ export async function socialmateApiRequest(
 	qs: IDataObject = {},
 	options: SocialMateRequestOptions = {},
 ): Promise<any> {
-	const creds = await this.getCredentials(SOCIALMATE_CREDENTIAL);
 	const baseUrl = await resolveBaseUrl.call(this);
 
 	const requestOptions: IHttpRequestOptions = {
 		method,
 		url: `${baseUrl}${endpoint}`,
 		headers: {
-			'x-api-key': creds.apiKey as string,
 			...(options.encoding ? {} : { Accept: 'application/json' }),
 			...(options.headers ?? {}),
 		},
@@ -158,7 +158,11 @@ export async function socialmateApiRequest(
 	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		try {
-			const response = await this.helpers.httpRequest(requestOptions);
+			const response = await this.helpers.httpRequestWithAuthentication.call(
+				this,
+				SOCIALMATE_CREDENTIAL,
+				requestOptions,
+			);
 			if (options.encoding) return response; // raw binary buffer
 			return options.returnEnvelope ? response : unwrapEnvelope(response);
 		} catch (error) {
