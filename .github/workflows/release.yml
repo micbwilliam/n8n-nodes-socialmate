@@ -31,7 +31,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
+          # NOTE: do NOT set registry-url here — it generates an .npmrc with
+          # _authToken=${NODE_AUTH_TOKEN} that shadows the token and breaks
+          # semantic-release auth. semantic-release manages .npmrc from NPM_TOKEN.
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
