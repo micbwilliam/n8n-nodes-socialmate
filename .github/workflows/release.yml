@@ -37,6 +37,12 @@ jobs:
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
+      # Strip devDependencies so the PUBLISHED package.json carries ZERO deps —
+      # supply-chain scanners (Socket, npm audit) then only see the shipped
+      # artifact. The tools stay installed in node_modules; the repo's
+      # package.json is untouched (the release commits only CHANGELOG.md, see
+      # .releaserc git assets).
+      - run: npm pkg delete devDependencies
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

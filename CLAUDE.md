@@ -100,3 +100,11 @@ On push to `main` the workflow versions, tags (`vX.Y.Z`), publishes to npm (with
 regenerates `CHANGELOG.md`, and cuts the matching GitHub Release. The node keeps its **own semver —
 not pinned to the app version**; mention the app version it was aligned to in the commit body so it
 flows into the changelog + release notes.
+
+**Published manifest is stripped.** The release workflow runs `npm pkg delete devDependencies`
+before publishing, so the **npm tarball's `package.json` carries ZERO dependencies** — supply-chain
+scanners (Socket, npm audit) only ever see the shipped artifact, never our build/release tooling
+(semantic-release, gulp, eslint…), which is never installed by consumers anyway. The repo keeps its
+devDependencies for building. Because of this, a release commits **only `CHANGELOG.md`** back (not
+`package.json`) — so the repo's `package.json` `version` is intentionally **not** bumped by releases
+(semantic-release versions from git **tags**); it may lag the npm version. That's expected, not a bug.
