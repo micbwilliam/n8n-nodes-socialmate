@@ -4,6 +4,21 @@ All notable changes to **n8n-nodes-socialmate** are documented here. This projec
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] — 2026-06-28
+
+### Fixed
+- **Group / Media Pro gating now matches the app.** The SocialMate server moved three
+  write actions behind Pro (`apiWriteEnabled`): **Group → Leave**
+  (`POST …/groups/:id/leave`), **Media → Force Download** (`POST …/media/:id/download`),
+  and **Media → Delete** (`DELETE …/media/:id`). The operation descriptions already carried
+  the "(requires Pro)" hint; this release also corrects the **README Free-vs-Pro matrix**,
+  which still listed those three under Free. On Free they return a `402` naming
+  `apiWriteEnabled` — same as the other group/media write actions.
+
+> Documentation/labelling-only release — no operation, endpoint or event behaviour changed.
+> Aligned with SocialMate app `1.0.0-rc.4` per its `docs/CROSS-REPO-CONTRACT.md`; coverage
+> remains all 55 endpoints and all 29 trigger events.
+
 ## [2.4.0] — 2026-06-24
 
 ### Added

@@ -68,8 +68,8 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 | **Message** | Send Text | Send Media · Get AI Context · Search / List history |
 | **Chat** | Get Many | — |
 | **Contact** | Get · Get Many | — |
-| **Group** | Get Many · Get · Get Invite Link · Leave | Create · Update Participants · Set Subject · Set Description |
-| **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Force Download · Get Download Queue · Delete | Run Cleanup |
+| **Group** | Get Many · Get · Get Invite Link | Create · Update Participants · Set Subject · Set Description · Leave |
+| **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup |
 | **Queue** | Get Status · Get Items · Get Batches | Enqueue · Bulk Import · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
 | **Account** | Get Many · Get · Get Anti-Ban Status | — |
 | **Sync** | Get Status | Trigger |
