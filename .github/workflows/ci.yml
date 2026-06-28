@@ -1,0 +1,21 @@
+name: CI
+
+# Build + lint on PRs and on pushes to any branch except main, so broken
+# code never reaches the auto-publisher (main is handled by release.yml).
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
+      - run: npm run build
+      - run: npm run lint

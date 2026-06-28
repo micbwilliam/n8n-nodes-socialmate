@@ -1,0 +1,42 @@
+name: Release
+
+# Fully automatic releases. Push a Conventional Commit to `main`
+# (fix: -> patch, feat: -> minor, feat!:/BREAKING CHANGE: -> major) and
+# semantic-release versions, tags, publishes to npm (with provenance),
+# updates CHANGELOG.md + package.json, and cuts the matching GitHub Release.
+# Non-releasing commits (docs:/chore:/ci:/refactor:/test:) publish nothing.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write # push the changelog/version commit + tag, create the Release
+  issues: write
+  pull-requests: write
+  id-token: write # npm provenance via OIDC
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # semantic-release needs full history + tags
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
+      - run: npm run build
+      - run: npm run lint
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
