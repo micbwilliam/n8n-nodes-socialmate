@@ -37,19 +37,6 @@ jobs:
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
-      - name: Debug NPM_TOKEN (temporary)
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GH_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          LEN=${#NPM_TOKEN}
-          SHA=$(printf %s "$NPM_TOKEN" | sha256sum | cut -c1-12)
-          printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
-          if npm whoami --registry https://registry.npmjs.org/ >/dev/null 2>&1; then W=OK; else W=FAIL; fi
-          TAG="diag-len${LEN}-${SHA}-whoami${W}"
-          echo "DIAG => $TAG"
-          git tag -f "$TAG"
-          git push -f "https://x-access-token:${GH_PUSH_TOKEN}@github.com/micbwilliam/n8n-nodes-socialmate.git" "refs/tags/$TAG"
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
