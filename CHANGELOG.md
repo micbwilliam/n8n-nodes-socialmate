@@ -1,3 +1,9 @@
+## [2.4.2](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.1...v2.4.2) (2026-06-28)
+
+### Bug Fixes
+
+* **ci:** remove setup-node registry-url that broke npm auth ([f4db432](https://github.com/micbwilliam/n8n-nodes-socialmate/commit/f4db43276a6ef76589e2bb0cb44d16329f911b5f))
+
 # Changelog
 
 All notable changes to **n8n-nodes-socialmate** are documented here. This project
