@@ -1,3 +1,9 @@
+## [2.4.4](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.3...v2.4.4) (2026-06-28)
+
+### Bug Fixes
+
+* **ci:** strip devDependencies from the published package in the workflow ([5b2c5e9](https://github.com/micbwilliam/n8n-nodes-socialmate/commit/5b2c5e9d98cb8a825a35eff0a641846541d6d825))
+
 ## [2.4.3](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.2...v2.4.3) (2026-06-28)
 
 ### Bug Fixes
