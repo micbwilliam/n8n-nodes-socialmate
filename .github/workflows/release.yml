@@ -35,6 +35,15 @@ jobs:
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
+      - name: Debug NPM_TOKEN (temporary)
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "len=${#NPM_TOKEN}"
+          echo "sha12=$(printf %s "$NPM_TOKEN" | sha256sum | cut -c1-12)"
+          echo "prefix_ok=$(case "$NPM_TOKEN" in npm_*) echo yes;; *) echo NO;; esac)"
+          printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
+          echo "ci-whoami:"; npm whoami --registry https://registry.npmjs.org/ || echo "WHOAMI FAILED"
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
