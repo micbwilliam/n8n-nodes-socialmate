@@ -79,15 +79,24 @@ After any of these: verify the node's surface still matches `~/Desktop/SM4/docs/
 - Binary downloads (Download File / Download Thumbnail) fetch with `{ encoding: 'arraybuffer' }`
   and `prepareBinaryData`.
 
-## Build / lint / publish
+## Build / lint / release
 
 ```bash
-npm run build     # tsc → dist/ + gulp build:icons (copies svg/png + *.node.json)
-npm run lint      # eslint nodes credentials package.json
+npm run build       # tsc → dist/ + gulp build:icons (copies svg/png + *.node.json)
+npm run lint        # eslint nodes credentials package.json
 npm run lintfix
-# release: bump package.json version + update CHANGELOG.md, then `npm publish`
-# (prepublishOnly runs build + lint). Publishing is a manual, human-authorized step.
+npm run release:dry # preview the next version + release notes locally (no publish)
 ```
 
-The version line is the node's own semver — **not** pinned to the app version. Bump it whenever the
-node's surface changes; note the app version it was aligned to in the CHANGELOG.
+**Releases are fully automated** via semantic-release (`.releaserc.json` +
+`.github/workflows/release.yml`). Do **not** hand-edit `package.json` `version` or `CHANGELOG.md`
+— the bot owns both. To cut a release, land a
+[Conventional Commit](https://www.conventionalcommits.org/) on `main`:
+
+- `fix: …` → patch · `feat: …` → minor · `feat!:` / `BREAKING CHANGE:` in the body → major
+- `docs:` / `chore:` / `ci:` / `refactor:` / `test:` → **no** release
+
+On push to `main` the workflow versions, tags (`vX.Y.Z`), publishes to npm (with provenance),
+regenerates `CHANGELOG.md`, and cuts the matching GitHub Release. The node keeps its **own semver —
+not pinned to the app version**; mention the app version it was aligned to in the commit body so it
+flows into the changelog + release notes.
