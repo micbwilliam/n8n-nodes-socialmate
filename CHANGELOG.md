@@ -1,3 +1,9 @@
+## [2.4.3](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.2...v2.4.3) (2026-06-28)
+
+### Bug Fixes
+
+* clean published manifest + n8n verification compliance ([5abb059](https://github.com/micbwilliam/n8n-nodes-socialmate/commit/5abb059f5d0afa48292a1cd4ccf0118f32ba9f2e))
+
 ## [2.4.2](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.1...v2.4.2) (2026-06-28)
 
 ### Bug Fixes
