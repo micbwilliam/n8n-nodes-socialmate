@@ -43,9 +43,9 @@ const chatIdProperty: INodeProperties = {
 	type: 'string',
 	default: '',
 	required: true,
-	placeholder: '15551234567 or 123456789@g.us',
+	placeholder: '+1 555 123 4567 or 123456789@g.us',
 	description:
-		'A phone number in international format (digits only, no +) for a 1:1 chat, or a group JID ending in @g.us',
+		'A phone number in international format including the country code — punctuation, a leading + and a 00 prefix are all accepted (e.g. +1 (555) 123-4567, 15551234567). The country code is required. For a group, pass its JID ending in @g.us.',
 	displayOptions: { show: { resource: ['message'], operation: ['sendText', 'sendMedia', 'getAiContext'] } },
 };
 

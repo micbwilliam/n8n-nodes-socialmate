@@ -50,7 +50,7 @@ export const mediaFields: INodeProperties[] = [
 		default: {},
 		displayOptions: { show: { resource: ['media'], operation: ['getMany'] } },
 		options: [
-			{ displayName: 'Chat ID', name: 'chatId', type: 'string', default: '' },
+			{ displayName: 'Chat ID', name: 'chatId', type: 'string', default: '', description: 'Restrict to one chat — a phone number in international format (with country code) or a group JID ending in @g.us' },
 			{
 				displayName: 'Direction',
 				name: 'direction',

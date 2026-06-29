@@ -34,12 +34,16 @@ function toUnixMs(value: unknown): number | null {
 	return Number.isNaN(ms) ? null : ms;
 }
 
-/** Bare number → `<digits>@s.whatsapp.net`; JIDs pass through unchanged. */
+/**
+ * Phone (any human format) → `<digits>@s.whatsapp.net`; JIDs pass through
+ * unchanged. Reuses `normalizeChatId` so participants honor the same lenient
+ * format rule (punctuation, `+`, `00` prefix) as the send recipient field.
+ */
 function toParticipantJid(token: string): string {
-	const t = token.trim();
+	const t = (token ?? '').trim();
 	if (!t) return '';
-	if (t.includes('@')) return t;
-	return `${t.replace(/[^\d]/g, '')}@s.whatsapp.net`;
+	const normalized = normalizeChatId(t);
+	return normalized.includes('@') ? normalized : `${normalized}@s.whatsapp.net`;
 }
 
 function splitCsv(value: string): string[] {

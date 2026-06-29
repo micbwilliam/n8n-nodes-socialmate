@@ -32,6 +32,9 @@ export const queueFields: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		required: true,
+		placeholder: '+1 555 123 4567 or 123456789@g.us',
+		description:
+			'A phone number in international format including the country code — punctuation, a leading + and a 00 prefix are all accepted. The country code is required. For a group, pass its JID ending in @g.us.',
 		displayOptions: { show: { resource: ['queue'], operation: ['enqueue'] } },
 	},
 	{

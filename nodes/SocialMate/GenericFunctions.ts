@@ -219,12 +219,25 @@ export async function socialmateApiRequestAllItems(
 	return returnAll || hardLimit <= 0 ? results : results.slice(0, hardLimit);
 }
 
-/** Resolve a phone/JID input into the chatId the API expects (digits or JID). */
+/**
+ * Resolve a phone/JID input into the chatId the API expects. Accepts almost
+ * any human/CRM phone format — punctuation, a leading `+`, or a `00`
+ * international access code — and mirrors the SocialMate server's own
+ * `phoneOrGroupToJid` rule so both ends agree.
+ *
+ *   "+1 (555) 123-4567" → "15551234567"
+ *   "0044 20 7946 0958" → "442079460958"           (00 intl prefix dropped)
+ *   "12345@g.us"        → "12345@g.us"              (JID passthrough)
+ *   "120363…-1609459200" → "120363…-1609459200"     (bare group id preserved)
+ */
 export function normalizeChatId(input: string): string {
 	const value = (input ?? '').trim();
 	if (!value) throw new Error('Chat ID / phone number is required');
 	if (value.includes('@')) return value; // already a JID (e.g. group@g.us)
-	return value.replace(/[^\d]/g, ''); // E.164 digits only for 1:1 chats
+	if (/^\d{12,}-\d+$/.test(value)) return value; // bare legacy group id — keep hyphen
+	let digits = value.replace(/[^\d]/g, ''); // E.164 digits only for 1:1 chats
+	if (digits.startsWith('00')) digits = digits.slice(2); // 00 == leading '+'
+	return digits;
 }
 
 /** Guard a required string parameter with a clear node error. */
