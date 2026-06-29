@@ -1,3 +1,9 @@
+## [2.5.0](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.4...v2.5.0) (2026-06-29)
+
+### Features
+
+* enhance chat ID normalization and update descriptions for phone number formats ([38c9cc1](https://github.com/micbwilliam/n8n-nodes-socialmate/commit/38c9cc1484bd3fcf1174ca2e06fed53f61347959))
+
 ## [2.4.4](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.3...v2.4.4) (2026-06-28)
 
 ### Bug Fixes
