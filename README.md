@@ -238,6 +238,10 @@ Importable workflows live in [`examples/`](examples/):
 - [`real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json) — a WhatsApp AI concierge (Trigger → Get AI Context → DeepSeek → reply).
 - [`auto-reply-trigger.json`](examples/auto-reply-trigger.json) — a minimal Trigger → Send Text auto-reply round-trip.
 - [`scheduled-bulk-send.json`](examples/scheduled-bulk-send.json) — schedule a daily bulk send via the smart queue (Pro).
+- [`keyword-router.json`](examples/keyword-router.json) — Trigger → IF on the message text → route to different replies (extend with more branches).
+- [`drip-onboarding-sequence.json`](examples/drip-onboarding-sequence.json) — Trigger → three scheduled Queue Enqueues that drip a welcome sequence over a few days (Pro).
+- [`order-confirmation-webhook.json`](examples/order-confirmation-webhook.json) — your store's order webhook → Send Text order confirmation.
+- [`new-lead-alert.json`](examples/new-lead-alert.json) — Trigger → forward a short summary of each inbound message to your team group.
 
 ## Development
 

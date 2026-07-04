@@ -1,0 +1,96 @@
+{
+  "id": "socialmateKeywordRouter1",
+  "name": "Keyword Router (Trigger → IF keyword → different replies)",
+  "nodes": [
+    {
+      "parameters": {
+        "events": ["message.received"],
+        "options": {}
+      },
+      "id": "k1111111-1111-4111-8111-111111111111",
+      "name": "SocialMate Trigger",
+      "type": "n8n-nodes-socialmate.socialMateTrigger",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "webhookId": "socialmate-keyword-router"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.data.body }}",
+              "rightValue": "price",
+              "operator": { "type": "string", "operation": "contains" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "k2222222-2222-4222-8222-222222222222",
+      "name": "Mentions \"price\"?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "text": "=Thanks for asking about pricing! Here's our plans page: https://socialmate.app/pricing — happy to answer anything.",
+        "sendOptions": {}
+      },
+      "id": "k3333333-3333-4333-8333-333333333333",
+      "name": "Send pricing reply",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [520, 200]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "text": "=Thanks for your message! Reply PRICE for plans, HELP to reach a human, or just tell me what you need.",
+        "sendOptions": {}
+      },
+      "id": "k4444444-4444-4444-8444-444444444444",
+      "name": "Send default menu",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [520, 400]
+    },
+    {
+      "parameters": {
+        "content": "## Keyword Router\n\n**Flow:** an inbound message fires the **SocialMate Trigger** → the **IF** node checks whether the text contains `price` → sends a pricing reply on the *true* branch, or a default menu on the *false* branch.\n\n**Extend it:** chain more **IF** nodes (or swap in a **Switch**) to branch on `help`, `stop`, order numbers, etc. Read the message text as `{{ $json.data.body }}`.\n\n**Setup:**\n1. Create a **SocialMate API** credential.\n2. Edit the keyword + the two replies.\n3. **Save & Activate**, then message the number to test.\n\nText send works on **Free**; replies still pass through the anti-ban engine.",
+        "height": 320,
+        "width": 440
+      },
+      "id": "k5555555-5555-4555-8555-555555555555",
+      "name": "How to use",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -60]
+    }
+  ],
+  "connections": {
+    "SocialMate Trigger": {
+      "main": [[{ "node": "Mentions \"price\"?", "type": "main", "index": 0 }]]
+    },
+    "Mentions \"price\"?": {
+      "main": [
+        [{ "node": "Send pricing reply", "type": "main", "index": 0 }],
+        [{ "node": "Send default menu", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

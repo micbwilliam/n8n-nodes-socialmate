@@ -1,0 +1,101 @@
+{
+  "id": "socialmateDripOnboarding1",
+  "name": "Drip Onboarding Sequence (Trigger → 3 scheduled Queue Enqueues)",
+  "nodes": [
+    {
+      "parameters": {
+        "events": ["message.received"],
+        "options": {}
+      },
+      "id": "d1111111-1111-4111-8111-111111111111",
+      "name": "SocialMate Trigger",
+      "type": "n8n-nodes-socialmate.socialMateTrigger",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "webhookId": "socialmate-drip-onboarding"
+    },
+    {
+      "parameters": {
+        "resource": "queue",
+        "operation": "enqueue",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "content": "=Welcome to SocialMate 👋 Thanks for reaching out — I'll send a couple of quick tips over the next few days.",
+        "enqueueOptions": {
+          "displayName": "Onboarding · welcome",
+          "priority": 2
+        }
+      },
+      "id": "d2222222-2222-4222-8222-222222222222",
+      "name": "Step 1 · Welcome (now)",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [260, 180]
+    },
+    {
+      "parameters": {
+        "resource": "queue",
+        "operation": "enqueue",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "content": "=Quick tip for day one: reply STOP any time and I'll stop messaging. Here's the one thing most people set up first…",
+        "enqueueOptions": {
+          "displayName": "Onboarding · day 1 tip",
+          "priority": 2,
+          "scheduledAt": "={{ $now.plus({ days: 1 }).toISO() }}"
+        }
+      },
+      "id": "d3333333-3333-4333-8333-333333333333",
+      "name": "Step 2 · Tip (+1 day)",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "resource": "queue",
+        "operation": "enqueue",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "content": "=Checking in — how's it going so far? Just reply here if you have any questions, a real person reads these.",
+        "enqueueOptions": {
+          "displayName": "Onboarding · day 3 check-in",
+          "priority": 2,
+          "scheduledAt": "={{ $now.plus({ days: 3 }).toISO() }}"
+        }
+      },
+      "id": "d4444444-4444-4444-8444-444444444444",
+      "name": "Step 3 · Check-in (+3 days)",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [260, 420]
+    },
+    {
+      "parameters": {
+        "content": "## Drip Onboarding Sequence (Pro)\n\n**Flow:** an inbound message fires the **SocialMate Trigger** → three **Queue Enqueue** nodes schedule a welcome now, a tip in 1 day, and a check-in in 3 days. Every step is paced by the anti-ban engine and respects your rate limits + quiet hours.\n\n**Setup:**\n1. Create a **SocialMate API** credential (admin scope lets the Trigger self-register its webhook).\n2. Edit the three message bodies.\n3. **Save & Activate.**\n\n**Careful:** as drawn, this drips to *anyone* who messages you. In production, add an IF/dedupe before Step 1 so a contact only enters the sequence once (e.g. check a datastore, or gate on a first-message flag).\n\nQueue Enqueue + scheduling are **Pro**. Only message people who expect to hear from you.",
+        "height": 360,
+        "width": 460
+      },
+      "id": "d5555555-5555-4555-8555-555555555555",
+      "name": "How to use",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-480, 180]
+    }
+  ],
+  "connections": {
+    "SocialMate Trigger": {
+      "main": [
+        [
+          { "node": "Step 1 · Welcome (now)", "type": "main", "index": 0 },
+          { "node": "Step 2 · Tip (+1 day)", "type": "main", "index": 0 },
+          { "node": "Step 3 · Check-in (+3 days)", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

@@ -1,0 +1,55 @@
+{
+  "id": "socialmateOrderConfirm1",
+  "name": "Order Confirmation (Store Webhook → Send Text)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-confirmation",
+        "options": {}
+      },
+      "id": "o1111111-1111-4111-8111-111111111111",
+      "name": "Store Order Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "socialmate-order-confirm"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "accountId": "YOUR_ACCOUNT_ID",
+        "chatId": "={{ $json.body.phone }}",
+        "text": "=Hi {{ $json.body.name }}, thanks for your order! 🎉\nOrder {{ $json.body.order_id }} is confirmed and we'll let you know when it ships.",
+        "sendOptions": {}
+      },
+      "id": "o2222222-2222-4222-8222-222222222222",
+      "name": "Send Confirmation",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Order Confirmation (Webhook → WhatsApp)\n\n**Flow:** your store (WooCommerce, Shopify, a custom checkout — anything that can POST) hits the **Webhook** node when an order is placed → **Send Confirmation** messages the customer.\n\n**Setup:**\n1. Create a **SocialMate API** credential; set **Account** in *Send Confirmation* (replace `YOUR_ACCOUNT_ID`).\n2. Point your store's order webhook at this node's **Production URL** (shown on the Webhook node after you save).\n3. Map the fields to your payload — this example expects `body.phone`, `body.name`, `body.order_id`. Adjust to match what your store sends.\n4. **Save & Activate.**\n\nPlain text send works on **Free**. Only message customers who provided their number for order updates.",
+        "height": 320,
+        "width": 460
+      },
+      "id": "o3333333-3333-4333-8333-333333333333",
+      "name": "How to use",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -80]
+    }
+  ],
+  "connections": {
+    "Store Order Webhook": {
+      "main": [[{ "node": "Send Confirmation", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
