@@ -8,7 +8,7 @@ export const queueOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['queue'] } },
 		options: [
-			{ name: 'Bulk Import', value: 'import', action: 'Bulk import messages', description: 'Create a batch from a template + rows, e.g. from a spreadsheet (requires Pro)' },
+			{ name: 'Bulk Import', value: 'import', action: 'Bulk import messages', description: 'Create a batch from a template + rows, e.g. from a spreadsheet. Opt-in Pro feature — off by default; enable it with consent in the app first (returns 403 until then).' },
 			{ name: 'Cancel Batch', value: 'cancelBatch', action: 'Cancel a batch', description: 'Cancel all pending items in a batch (requires Pro)' },
 			{ name: 'Cancel Item', value: 'cancelItem', action: 'Cancel an item', description: 'Cancel a pending/processing item (requires Pro)' },
 			{ name: 'Enqueue Message', value: 'enqueue', action: 'Enqueue a message', description: 'Queue a single text message, optionally scheduled (requires Pro)' },

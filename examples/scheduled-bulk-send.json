@@ -1,6 +1,6 @@
 {
   "id": "socialmateScheduledBulk1",
-  "name": "Scheduled Bulk Send (Schedule → SocialMate Queue Bulk Import)",
+  "name": "Scheduled Reminders (Schedule → SocialMate Queue Import)",
   "nodes": [
     {
       "parameters": {
@@ -34,7 +34,7 @@
     },
     {
       "parameters": {
-        "content": "## Scheduled Bulk Send (Pro)\n\n**Flow:** a daily **Schedule Trigger** → **Queue Bulk Import** drops a batch into SocialMate's smart queue, which paces every send through the anti-ban engine and auto-retries any that get rate-limited.\n\n**Setup:**\n1. Create a **SocialMate API** credential and set **Account** in *Queue Bulk Import* (replace `YOUR_ACCOUNT_ID`, or it auto-resolves when the key is bound to one account).\n2. Replace the **Template** and **Rows** — usually you'd map `rows` from a Google Sheets / database node above instead of the hard-coded array.\n3. **Save & Activate.**\n\nBulk Import + scheduling are **Pro** features. Only message contacts who expect to hear from you.",
+        "content": "## Scheduled Batch of Reminders (Pro)\n\n**Flow:** a daily **Schedule Trigger** → **Queue Bulk Import** drops a batch into SocialMate's smart queue, which paces every send through the anti-ban engine and auto-retries any that get rate-limited.\n\n**Setup:**\n1. Create a **SocialMate API** credential and set **Account** in *Queue Bulk Import* (replace `YOUR_ACCOUNT_ID`, or it auto-resolves when the key is bound to one account).\n2. Replace the **Template** and **Rows** — usually you'd map `rows` from a Google Sheets / database node above instead of the hard-coded array.\n3. **Save & Activate.**\n\nBulk Import + scheduling are **Pro** features (Bulk Import is opt-in and **off by default** — enable it with consent in the app first). Only message contacts who expect to hear from you.",
         "height": 300,
         "width": 440
       },

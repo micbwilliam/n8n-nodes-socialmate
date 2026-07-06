@@ -13,7 +13,7 @@
 
 Official [n8n](https://n8n.io) community node for **[SocialMate](https://socialmate.app)** — the self-hosted desktop WhatsApp automation server.
 
-Automate WhatsApp from n8n: send / schedule / bulk-import messages, manage chats, contacts, groups and media, and react to incoming messages and lifecycle events — all through your own SocialMate server.
+Automate WhatsApp from n8n: send and schedule personalized messages, queue and batch-import to opted-in contacts (an opt-in Pro feature), manage chats, contacts, groups and media, and react to incoming messages and lifecycle events — all through your own SocialMate server.
 
 - **Docs:** https://socialmate.app/docs/n8n
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
@@ -177,7 +177,7 @@ API shapes (handy when mapping fields). Responses are wrapped in the `{ "data": 
 { "data": { "account": { "id": "acct_1", "name": "Sales" }, "chat": { "id": "15551234567", "name": "Jane" }, "messages": [ { "role": "user", "content": "Hi" } ], "transcript": "Jane: Hi", "tokenEstimate": 8 } }
 ```
 
-**Queue → Bulk Import** (Pro) — when to use: campaigns; one batch of up to 5000 templated rows:
+**Queue → Bulk Import** (Pro; opt-in, off by default) — when to use: queue one batch of templated, *personalized* messages (e.g. reminders/notifications) to contacts who opted in — up to 5000 rows:
 
 ```json
 {
@@ -225,7 +225,7 @@ A **Send Text / Send Media** call resolves one of three ways:
 
 Free covers text send, reads (chats/contacts/accounts/media), live webhooks, and
 webhook/API-key management — one account. Pro adds media send, group management,
-scheduling/bulk import, message history/search, sync, the smart queue, unlimited accounts
+scheduling and opt-in bulk import, message history/search, sync, the smart queue, unlimited accounts
 and a stable named tunnel.
 
 Free is capped at **200 sends/day**; Pro starts at **500/day** per account and scales to
@@ -237,7 +237,7 @@ Importable workflows live in [`examples/`](examples/):
 
 - [`real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json) — a WhatsApp AI concierge (Trigger → Get AI Context → DeepSeek → reply).
 - [`auto-reply-trigger.json`](examples/auto-reply-trigger.json) — a minimal Trigger → Send Text auto-reply round-trip.
-- [`scheduled-bulk-send.json`](examples/scheduled-bulk-send.json) — schedule a daily bulk send via the smart queue (Pro).
+- [`scheduled-bulk-send.json`](examples/scheduled-bulk-send.json) — schedule a daily batch of queued, personalized reminders to opted-in contacts via the smart queue (Pro).
 - [`keyword-router.json`](examples/keyword-router.json) — Trigger → IF on the message text → route to different replies (extend with more branches).
 - [`drip-onboarding-sequence.json`](examples/drip-onboarding-sequence.json) — Trigger → three scheduled Queue Enqueues that drip a welcome sequence over a few days (Pro).
 - [`order-confirmation-webhook.json`](examples/order-confirmation-webhook.json) — your store's order webhook → Send Text order confirmation.
