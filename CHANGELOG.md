@@ -1,3 +1,9 @@
+## [2.6.0](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.5.0...v2.6.0) (2026-07-06)
+
+### Features
+
+* update descriptions for bulk import and reminders in README and examples ([5fda95f](https://github.com/micbwilliam/n8n-nodes-socialmate/commit/5fda95f87f8895fa91666482ad0e1cdeb5471fb0))
+
 ## [2.5.0](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.4.4...v2.5.0) (2026-06-29)
 
 ### Features
