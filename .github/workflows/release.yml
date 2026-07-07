@@ -1,23 +1,26 @@
 name: Release
 
-# Fully automatic releases. Push a Conventional Commit to `main`
-# (fix: -> patch, feat: -> minor, feat!:/BREAKING CHANGE: -> major) and
-# semantic-release versions, tags, publishes to npm (with provenance),
-# updates CHANGELOG.md + package.json, and cuts the matching GitHub Release.
-# Non-releasing commits (docs:/chore:/ci:/refactor:/test:) publish nothing.
+# Tag-driven releases. Pushing a `v*` tag builds, lints, strips
+# devDependencies, publishes THAT EXACT version to npm (with provenance) and
+# cuts the matching GitHub Release with auto-generated notes. The tag names the
+# version. Pushing commits to `main` publishes NOTHING.
+#
+# Cut a release from a clean main:
+#   npm run release:patch   # or release:minor / release:major
+# (bumps package.json, commits, creates vX.Y.Z, pushes commit + tag)
+# Or tag by hand:
+#   git tag v2.6.0 && git push origin v2.6.0
 
 on:
   push:
-    branches: [main]
+    tags: ["v*"]
 
 permissions:
-  contents: write # push the changelog/version commit + tag, create the Release
-  issues: write
-  pull-requests: write
+  contents: write # create the GitHub Release
   id-token: write # npm provenance via OIDC
 
 concurrency:
-  group: release
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -26,25 +29,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # semantic-release needs full history + tags
+          fetch-depth: 0 # full history so release notes can diff against prior tags
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          # NOTE: do NOT set registry-url here — it generates an .npmrc with
-          # _authToken=${NODE_AUTH_TOKEN} that shadows the token and breaks
-          # semantic-release auth. semantic-release manages .npmrc from NPM_TOKEN.
+          # Writes an .npmrc wiring `npm publish` auth to NODE_AUTH_TOKEN. (The
+          # old warning against registry-url applied to semantic-release, which
+          # managed its own .npmrc — we publish directly now, so this is correct.)
+          registry-url: "https://registry.npmjs.org"
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
+      # Pin package.json to the pushed tag (vX.Y.Z -> X.Y.Z). The tag is the
+      # single source of truth for the version; --allow-same-version makes this a
+      # no-op when the tagged commit already carries the bump (the `npm version`
+      # flow), and forces the version when someone tags a bare commit.
+      - name: Set version from tag
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
       # Strip devDependencies so the PUBLISHED package.json carries ZERO deps —
-      # supply-chain scanners (Socket, npm audit) then only see the shipped
-      # artifact. The tools stay installed in node_modules; the repo's
-      # package.json is untouched (the release commits only CHANGELOG.md, see
-      # .releaserc git assets).
+      # supply-chain scanners (Socket, npm audit) only ever see the shipped
+      # artifact. Tools stay installed in node_modules; the repo file is untouched.
       - run: npm pkg delete devDependencies
-      - run: npx semantic-release
+      - run: npm publish --provenance --access public
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes

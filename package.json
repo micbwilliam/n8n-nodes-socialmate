@@ -38,8 +38,9 @@
     "lint": "eslint nodes credentials package.json",
     "lintfix": "eslint nodes credentials package.json --fix",
     "prepublishOnly": "npm run build && npm run lint",
-    "release": "semantic-release",
-    "release:dry": "semantic-release --dry-run --no-ci"
+    "release:patch": "npm version patch && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags",
+    "release:major": "npm version major && git push --follow-tags"
   },
   "files": [
     "dist",
@@ -56,21 +57,13 @@
     ]
   },
   "devDependencies": {
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/commit-analyzer": "^13.0.1",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^11.0.6",
-    "@semantic-release/npm": "^12.0.2",
-    "@semantic-release/release-notes-generator": "^14.0.3",
     "@types/node": "^22.10.0",
     "@typescript-eslint/parser": "^7.18.0",
-    "conventional-changelog-conventionalcommits": "^8.0.0",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^5.0.0",
     "n8n-workflow": "*",
     "prettier": "^3.3.3",
-    "semantic-release": "^24.2.9",
     "typescript": "^5.5.4"
   },
   "peerDependencies": {

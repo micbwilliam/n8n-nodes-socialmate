@@ -82,29 +82,35 @@ After any of these: verify the node's surface still matches `~/Desktop/SM4/docs/
 ## Build / lint / release
 
 ```bash
-npm run build       # tsc → dist/ + gulp build:icons (copies svg/png + *.node.json)
-npm run lint        # eslint nodes credentials package.json
+npm run build         # tsc → dist/ + gulp build:icons (copies svg/png + *.node.json)
+npm run lint          # eslint nodes credentials package.json
 npm run lintfix
-npm run release:dry # preview the next version + release notes locally (no publish)
+npm run release:patch # bump patch, commit, tag vX.Y.Z, push commit + tag (also :minor / :major)
 ```
 
-**Releases are fully automated** via semantic-release (`.releaserc.json` +
-`.github/workflows/release.yml`). Do **not** hand-edit `package.json` `version` or `CHANGELOG.md`
-— the bot owns both. To cut a release, land a
-[Conventional Commit](https://www.conventionalcommits.org/) on `main`:
+**Releases are tag-triggered.** Pushing a `v*` git tag runs `.github/workflows/release.yml`, which
+builds, lints, strips devDependencies, and publishes **exactly that version** to npm (with
+provenance) + cuts the matching GitHub Release with auto-generated notes. **Pushing commits to
+`main` publishes nothing** — the tag is the only trigger, and the tag names the version.
 
-- `fix: …` → patch · `feat: …` → minor · `feat!:` / `BREAKING CHANGE:` in the body → major
-- `docs:` / `chore:` / `ci:` / `refactor:` / `test:` → **no** release
+To cut a release, from a clean `main`:
 
-On push to `main` the workflow versions, tags (`vX.Y.Z`), publishes to npm (with provenance),
-regenerates `CHANGELOG.md`, and cuts the matching GitHub Release. The node keeps its **own semver —
-not pinned to the app version**; mention the app version it was aligned to in the commit body so it
-flows into the changelog + release notes.
+```bash
+npm run release:patch   # or release:minor / release:major
+```
 
-**Published manifest is stripped.** The release workflow runs `npm pkg delete devDependencies`
-before publishing, so the **npm tarball's `package.json` carries ZERO dependencies** — supply-chain
-scanners (Socket, npm audit) only ever see the shipped artifact, never our build/release tooling
-(semantic-release, gulp, eslint…), which is never installed by consumers anyway. The repo keeps its
-devDependencies for building. Because of this, a release commits **only `CHANGELOG.md`** back (not
-`package.json`) — so the repo's `package.json` `version` is intentionally **not** bumped by releases
-(semantic-release versions from git **tags**); it may lag the npm version. That's expected, not a bug.
+That runs `npm version <bump>` (bumps `package.json`, commits, creates the `vX.Y.Z` tag) then
+`git push --follow-tags`. You can also tag by hand (`git tag v2.6.0 && git push origin v2.6.0`) — CI
+forces `package.json` to the tag version before publishing, so a bare tag works too. The node keeps
+its **own semver — not pinned to the app version**; note the app version it was aligned to in the
+tag/commit so it lands in the release notes. [Conventional Commits](https://www.conventionalcommits.org/)
+are still good practice for readable history/notes, but no longer *trigger* anything.
+
+**Published manifest is stripped.** The workflow runs `npm pkg delete devDependencies` before
+publishing, so the **npm tarball's `package.json` carries ZERO dependencies** — supply-chain
+scanners (Socket, npm audit) only ever see the shipped artifact, never the build tooling (gulp,
+eslint, tsc…), which consumers never install. The repo keeps its devDependencies for building.
+
+`CHANGELOG.md` is **no longer auto-generated** (semantic-release has been removed). The GitHub
+Release notes are auto-generated from commits/PRs at tag time; edit `CHANGELOG.md` by hand if you
+want to keep it current (it still ships in the tarball).
