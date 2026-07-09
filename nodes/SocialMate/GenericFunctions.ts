@@ -14,6 +14,32 @@ import { NodeApiError, NodeOperationError, sleep } from 'n8n-workflow';
 export const SOCIALMATE_CREDENTIAL = 'socialMateApi';
 const DEFAULT_LOCAL_URL = 'http://127.0.0.1:3456';
 const MAX_RATE_LIMIT_RETRIES = 3;
+/** Cap any single 429 retry sleep so a large Retry-After can't hang a run. */
+const MAX_RETRY_SLEEP_MS = 60_000;
+
+/**
+ * Thrown when a message send is refused by the server's anti-ban pipeline
+ * (HTTP 429 carrying a `reason`, e.g. `rate_limit` / `cooling` / `night_mode`).
+ * This is NOT a transport rate-limit — the send was deliberately blocked — so
+ * the request helper never retries it. The Message send operation catches this
+ * and surfaces it as a structured `{ blocked: true, ... }` result, parallel to
+ * the 200 `{ sent }` and 202 `{ queued }` outcomes, so a workflow can branch on
+ * it (e.g. enqueue on Pro) instead of failing or hanging.
+ */
+export class SocialMateBlockedError extends Error {
+	readonly reason: string;
+	readonly retryAfterMs: number | null;
+	readonly hint?: string;
+	readonly upgrade?: unknown;
+	constructor(block: { reason: string; retryAfterMs: number | null; hint?: string; upgrade?: unknown; message: string }) {
+		super(block.message);
+		this.name = 'SocialMateBlockedError';
+		this.reason = block.reason;
+		this.retryAfterMs = block.retryAfterMs;
+		this.hint = block.hint;
+		this.upgrade = block.upgrade;
+	}
+}
 
 type RequestContext =
 	| IExecuteFunctions
@@ -114,6 +140,47 @@ function getRetryDelayMs(error: unknown): number {
 	return 2000;
 }
 
+/** Extract an HTTP status from an n8n/undici error, or 0. */
+function getErrorStatus(error: unknown): number {
+	return (
+		(error as { statusCode?: number }).statusCode ??
+		(error as { response?: { statusCode?: number } }).response?.statusCode ??
+		0
+	);
+}
+
+/**
+ * If a 429 is an anti-ban send block (its wrapped error carries a `reason`),
+ * return the block detail; otherwise null (a transient per-key rate limit,
+ * which IS retryable). Both share HTTP 429, but only the anti-ban block carries
+ * `reason`/`upgrade` — the per-key limiter is `{ code:'rate_limited' }` with no
+ * `reason`.
+ */
+function parseAntiBanBlock(error: unknown): {
+	reason: string;
+	retryAfterMs: number | null;
+	hint?: string;
+	upgrade?: unknown;
+	message: string;
+} | null {
+	const err = error as { response?: { body?: IDataObject; data?: IDataObject } };
+	const body = (err.response?.body ?? err.response?.data ?? {}) as IDataObject;
+	const inner = ((body.error ?? body) as IDataObject) ?? {};
+	const reason = inner.reason;
+	if (typeof reason !== 'string' || reason === '') return null;
+	const message =
+		(typeof inner.message === 'string' && inner.message) ||
+		(typeof body.error === 'string' && body.error) ||
+		'Send blocked by anti-ban protection';
+	return {
+		reason,
+		retryAfterMs: typeof inner.retryAfterMs === 'number' ? inner.retryAfterMs : null,
+		hint: typeof inner.hint === 'string' ? inner.hint : undefined,
+		upgrade: inner.upgrade,
+		message,
+	};
+}
+
 interface SocialMateRequestOptions {
 	/** Return the full envelope (`{ data, pagination }`) instead of unwrapping. */
 	returnEnvelope?: boolean;
@@ -166,14 +233,21 @@ export async function socialmateApiRequest(
 			if (options.encoding) return response; // raw binary buffer
 			return options.returnEnvelope ? response : unwrapEnvelope(response);
 		} catch (error) {
-			const status =
-				(error as { statusCode?: number }).statusCode ??
-				(error as { response?: { statusCode?: number } }).response?.statusCode ??
-				0;
-			if (status === 429 && attempt < MAX_RATE_LIMIT_RETRIES) {
-				attempt += 1;
-				await sleep(getRetryDelayMs(error));
-				continue;
+			if (getErrorStatus(error) === 429) {
+				// A 429 is one of two very different things:
+				//  • an anti-ban SEND BLOCK (carries `reason`/`upgrade`) — the send
+				//    was refused, so retrying is wrong; blindly sleeping its
+				//    Retry-After (hours for `night_mode`) would hang the run. Surface
+				//    it so the Message op can branch on it.
+				//  • the transient per-key RATE LIMITER (`code:'rate_limited'`, no
+				//    `reason`) — genuinely retryable, with a capped backoff.
+				const block = parseAntiBanBlock(error);
+				if (block) throw new SocialMateBlockedError(block);
+				if (attempt < MAX_RATE_LIMIT_RETRIES) {
+					attempt += 1;
+					await sleep(Math.min(getRetryDelayMs(error), MAX_RETRY_SLEEP_MS));
+					continue;
+				}
 			}
 			toNodeError(this, error);
 		}
@@ -212,6 +286,10 @@ export async function socialmateApiRequestAllItems(
 		if (!returnAll && hardLimit > 0 && results.length >= hardLimit) {
 			return results.slice(0, hardLimit);
 		}
+		// Defense-in-depth: a response with no `pagination` metadata is not
+		// offset/limit pageable (e.g. a bare array whose route ignores `offset`).
+		// Take the single page and stop — never spin re-fetching page 0.
+		if (!pagination) break;
 		if (page.length < pageSize) break;
 		if (typeof total === 'number' && offset >= total) break;
 		if (page.length === 0) break;

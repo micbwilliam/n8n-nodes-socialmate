@@ -10,8 +10,13 @@ import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 import { socialmateApiRequest } from '../SocialMate/GenericFunctions';
 
-/** Every event SocialMate can deliver. Pro-only ones are labelled. */
-const EVENT_OPTIONS: Array<{ name: string; value: string }> = [
+/**
+ * Every event SocialMate can deliver. Pro-only ones are labelled "(Pro)"; an
+ * unlabelled event is available on Free. Exported so the contract-drift test can
+ * assert this list stays in lockstep with the app's `WEBHOOK_EVENTS` /
+ * `FREE_WEBHOOK_EVENTS` (via `product-facts.json`).
+ */
+export const EVENT_OPTIONS: Array<{ name: string; value: string }> = [
 	{ name: 'Message Received', value: 'message.received' },
 	{ name: 'Message Sent', value: 'message.sent' },
 	{ name: 'Account Connected', value: 'account.connected' },

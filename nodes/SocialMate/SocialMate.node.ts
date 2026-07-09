@@ -12,6 +12,7 @@ import {
 	socialmateApiRequestAllItems,
 	normalizeChatId,
 	SOCIALMATE_CREDENTIAL,
+	SocialMateBlockedError,
 } from './GenericFunctions';
 import { getAccounts, getChats, getGroups } from './methods/loadOptions';
 import { accountIdProperty } from './descriptions/common';
@@ -62,6 +63,12 @@ export class SocialMate implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Automate WhatsApp through your self-hosted SocialMate server',
+		// Expose every operation to n8n AI Agents as callable tools. The agent
+		// reads each operation/parameter description to decide what to call, so
+		// keep those descriptions action-oriented. NOTE: the n8n instance must
+		// also set N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true for community-node
+		// tool usage (see README → "Use SocialMate as an AI Agent tool").
+		usableAsTool: true,
 		defaults: { name: 'SocialMate' },
 		inputs: ['main'],
 		outputs: ['main'],
@@ -223,7 +230,28 @@ export class SocialMate implements INodeType {
 							}
 							body.media = media;
 						}
-						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/messages`, body);
+						try {
+							responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/messages`, body);
+						} catch (err) {
+							// Anti-ban refused the send (typically Free tier with no
+							// auto-queue). Surface it as a structured outcome parallel to
+							// 200 `{ sent }` / 202 `{ queued }` so a workflow can branch
+							// (e.g. IF blocked → Queue: Enqueue on Pro) instead of hanging
+							// or failing on an opaque error.
+							if (err instanceof SocialMateBlockedError) {
+								responseData = {
+									sent: false,
+									blocked: true,
+									reason: err.reason,
+									retryAfterMs: err.retryAfterMs,
+									...(err.hint ? { hint: err.hint } : {}),
+									...(err.upgrade ? { upgrade: err.upgrade } : {}),
+									message: err.message,
+								};
+							} else {
+								throw err;
+							}
+						}
 					} else if (operation === 'getAiContext') {
 						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
 						const o = this.getNodeParameter('aiContextOptions', i, {}) as IDataObject;
@@ -338,15 +366,27 @@ export class SocialMate implements INodeType {
 						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/queue/import`, body);
 					} else if (operation === 'getStatus') {
 						responseData = await socialmateApiRequest.call(this, 'GET', '/v1/queue/status');
-					} else if (operation === 'getItems' || operation === 'getBatches') {
-						const filters = operation === 'getItems' ? (this.getNodeParameter('itemFilters', i, {}) as IDataObject) : {};
-						const qs: IDataObject = { ...filters };
+					} else if (operation === 'getItems') {
+						// /v1/queue/items IS offset/limit paginated → page through it.
+						const qs: IDataObject = { ...(this.getNodeParameter('itemFilters', i, {}) as IDataObject) };
 						const accountId = (this.getNodeParameter('accountId', i, '') as string) || scopeDefault;
 						if (accountId) qs.accountId = accountId;
-						const endpoint = operation === 'getItems' ? '/v1/queue/items' : '/v1/queue/batches';
 						const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 						const limit = returnAll ? 0 : (this.getNodeParameter('limit', i, 50) as number);
-						responseData = await socialmateApiRequestAllItems.call(this, endpoint, qs, returnAll, limit);
+						responseData = await socialmateApiRequestAllItems.call(this, '/v1/queue/items', qs, returnAll, limit);
+					} else if (operation === 'getBatches') {
+						// /v1/queue/batches returns a bare, non-paginated array (no
+						// offset/total), so it must NOT go through the offset pager —
+						// that would loop forever once there are >= a page of batches.
+						// One GET, then apply the client-side limit.
+						const qs: IDataObject = {};
+						const accountId = (this.getNodeParameter('accountId', i, '') as string) || scopeDefault;
+						if (accountId) qs.accountId = accountId;
+						const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
+						const limit = returnAll ? 0 : (this.getNodeParameter('limit', i, 50) as number);
+						const batches = (await socialmateApiRequest.call(this, 'GET', '/v1/queue/batches', {}, qs)) as IDataObject[];
+						const list = Array.isArray(batches) ? batches : [];
+						responseData = !returnAll && limit > 0 ? list.slice(0, limit) : list;
 					} else if (operation === 'cancelItem') {
 						responseData = await socialmateApiRequest.call(this, 'DELETE', `/v1/queue/items/${this.getNodeParameter('itemId', i)}`);
 					} else if (operation === 'retryItem') {

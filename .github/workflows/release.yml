@@ -41,6 +41,7 @@ jobs:
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
+      - run: npm test # gate the publish on the unit + integration + drift suite
       # Pin package.json to the pushed tag (vX.Y.Z -> X.Y.Z). The tag is the
       # single source of truth for the version; --allow-same-version makes this a
       # no-op when the tagged commit already carries the bump (the `npm version`

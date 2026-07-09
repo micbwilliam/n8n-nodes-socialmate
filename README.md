@@ -111,6 +111,26 @@ and labels media (`[image]`, `[voice]`,
 …). *(Requires SocialMate Pro — reading history.)* See
 [`examples/real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json).
 
+## Use SocialMate as an AI Agent tool
+
+Every SocialMate operation is exposed as an **AI Agent tool** (`usableAsTool`), so an n8n **AI
+Agent** can call them on its own — _"send this reply", "look up the contact", "fetch the last 20
+messages", "queue a reminder"_ — choosing the operation from its description.
+
+**Enable it on your n8n instance** (required for _any_ community node used as a tool):
+
+```bash
+N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+```
+
+Then add **SocialMate** as a tool on an **AI Agent** node and pick the operation. Pair it with
+**`Message → Get AI Context`** (the conversation-memory tool) so the agent can read a whole thread
+before replying — a combination no official / Business-API node offers.
+
+> Some n8n versions have an open bug where certain community-node tools hand the agent an empty
+> observation ([n8n#26202](https://github.com/n8n-io/n8n/issues/26202)). If you hit it, upgrade n8n
+> or call the operation from a normal (non-agent) node.
+
 ## Trigger events
 
 The **SocialMate Trigger** covers all **29 events**. **9 are available on Free** —
@@ -205,16 +225,20 @@ Keys carry one or more scopes; an operation that needs more than the key has ret
 | `401` | Missing or invalid API key. |
 | `402` | A Pro feature on a Free license — the response names the required feature. |
 | `403` | The key lacks the required scope (read / send / admin). |
-| `429` | Rate-limited — the node retries up to 3 times and honours `Retry-After`. |
+| `429` | Rate-limited. A transient per-key limit is retried automatically (up to 3×, capped backoff); an **anti-ban send block** is surfaced as data instead — see *Send outcomes*. |
 
 ### Send outcomes
 
-A **Send Text / Send Media** call resolves one of three ways:
+A **Send Text / Send Media** call resolves one of these ways. The first three are returned as
+**data you can branch on** (no error thrown), so one workflow can handle every case:
 
-- **`200`** — sent immediately (`{ sent: true, messageId, … }`).
-- **`202`** — anti-ban deferred it, so SocialMate **auto-queued** it and the worker retries
-  when the number is eligible (`{ queued: true, itemId, … }`). *Pro only* — on Free a blocked
-  send returns `429` instead (it is not queued).
+- **Sent** — delivered immediately (`{ sent: true, messageId, … }`).
+- **Queued** *(Pro)* — anti-ban deferred it, so SocialMate **auto-queued** it and the worker
+  retries when the number is eligible (`{ queued: true, itemId, … }`).
+- **Blocked** *(typically Free)* — anti-ban refused it and there's no auto-queue, so the node
+  returns `{ blocked: true, reason, retryAfterMs, hint, upgrade }`. Branch on `blocked` to back
+  off, notify, or (on Pro) route to **Queue → Enqueue**. The node **returns immediately** — it
+  never sleeps on the block's `Retry-After` (which can be hours during quiet hours).
 - **`409`** — the account isn't connected; link it in the app first.
 
 > The legacy **`POST /v1/accounts/:id/messages/media`** route is **deprecated** (no auto-queue,

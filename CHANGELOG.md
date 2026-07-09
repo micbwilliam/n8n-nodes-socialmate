@@ -1,3 +1,34 @@
+## [2.7.0] — 2026-07-08
+
+Production-hardening release: two correctness fixes on the most common paths, first-class AI-Agent
+tool support, and the node's first test suite. See
+[`docs/CAPABILITY-AUDIT-AND-ROADMAP.md`](docs/CAPABILITY-AUDIT-AND-ROADMAP.md) for the full audit and
+the roadmap of planned capabilities (typing, mark-read, reply, poll, reaction, location, …).
+
+### Fixed
+- **Send `429` anti-ban blocks no longer hang or fail opaquely.** A Free-tier send refused by the
+  anti-ban engine was retried up to 3× while sleeping its `Retry-After` (hours during quiet hours),
+  then thrown as a generic error that dropped the `reason`/`upgrade` detail. The node now
+  distinguishes a transient per-key rate-limit (retried, capped backoff) from an anti-ban **block**,
+  which **Send Text / Send Media** return immediately as structured data
+  `{ blocked: true, reason, retryAfterMs, hint, upgrade }` — branch on it (e.g. route to
+  **Queue → Enqueue** on Pro).
+- **`Queue → Get Batches` with "Return All" no longer infinite-loops.** The batches endpoint returns
+  a non-paginated array; it's now fetched with a single request, and the list pager gained a guard so
+  no non-paginated response can loop.
+
+### Added
+- **`usableAsTool`** — every operation is now callable by an n8n **AI Agent**. Requires
+  `N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true` on the instance. See the README.
+- **Test suite** (`npm test`) — 31 tests with zero external deps: unit (phone/JID + base-URL parity
+  with the app), a mock-SM4 integration harness (envelope, `402`, `429` retry vs anti-ban block,
+  `202` queue, pagination + the Get-Batches no-loop guard), trigger **HMAC** verification, and a
+  **contract-drift guard** against a vendored `product-facts.json`. Plus `npm run test:live` (opt-in
+  smoke against a running app) and `npm run sync:contract`.
+
+### Changed
+- Codex node-type identifier corrected (`n8n-nodes-base.*` → `n8n-nodes-socialmate.*`).
+
 ## [2.6.0](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.5.0...v2.6.0) (2026-07-06)
 
 ### Features

@@ -1,0 +1,598 @@
+{
+  "_generated": "GENERATED FILE — do not edit by hand. Run `npm run gen:product-facts` after changing an anchor. Drift-guarded by src/shared/product-facts.test.ts. Map: docs/CROSS-REPO-CONTRACT.md.",
+  "version": "1.0.0-rc.6",
+  "tiers": {
+    "free": {
+      "maxAccounts": 1,
+      "apiEnabled": true,
+      "apiWriteEnabled": false,
+      "apiSmartQueue": false,
+      "aiEnabled": false,
+      "namedTunnel": false,
+      "dangerZone": false,
+      "localMessageCache": false,
+      "freeHistoryWindowDays": 0,
+      "webhookMaxEndpoints": 2,
+      "webhookDailyQuota": 100,
+      "scheduledMessages": false,
+      "autoStart": false,
+      "autoReconnect": false
+    },
+    "pro": {
+      "maxAccounts": "unlimited",
+      "apiEnabled": true,
+      "apiWriteEnabled": true,
+      "apiSmartQueue": true,
+      "aiEnabled": true,
+      "namedTunnel": true,
+      "dangerZone": true,
+      "localMessageCache": true,
+      "freeHistoryWindowDays": "unlimited",
+      "webhookMaxEndpoints": "unlimited",
+      "webhookDailyQuota": "unlimited",
+      "scheduledMessages": true,
+      "autoStart": true,
+      "autoReconnect": true
+    },
+    "pro_trial": {
+      "maxAccounts": "unlimited",
+      "apiEnabled": true,
+      "apiWriteEnabled": true,
+      "apiSmartQueue": true,
+      "aiEnabled": true,
+      "namedTunnel": true,
+      "dangerZone": true,
+      "localMessageCache": true,
+      "freeHistoryWindowDays": "unlimited",
+      "webhookMaxEndpoints": "unlimited",
+      "webhookDailyQuota": "unlimited",
+      "scheduledMessages": true,
+      "autoStart": true,
+      "autoReconnect": true
+    },
+    "dev": {
+      "maxAccounts": "unlimited",
+      "apiEnabled": true,
+      "apiWriteEnabled": true,
+      "apiSmartQueue": true,
+      "aiEnabled": true,
+      "namedTunnel": true,
+      "dangerZone": true,
+      "localMessageCache": true,
+      "freeHistoryWindowDays": "unlimited",
+      "webhookMaxEndpoints": "unlimited",
+      "webhookDailyQuota": "unlimited",
+      "scheduledMessages": true,
+      "autoStart": true,
+      "autoReconnect": true
+    }
+  },
+  "rateLimits": {
+    "default": {
+      "perMinute": 30,
+      "perHour": 100,
+      "perDay": 500,
+      "burstWindowMs": 10000,
+      "burstMax": 5
+    },
+    "perTier": {
+      "free": {
+        "perMinute": 10,
+        "perHour": 30,
+        "perDay": 200,
+        "burstMax": 3
+      },
+      "pro": {
+        "perMinute": 30,
+        "perHour": 100,
+        "perDay": 500,
+        "burstMax": 5
+      }
+    },
+    "highVolumeMode": {
+      "hardCeilingPerMinute": 120,
+      "hardCeilingPerHour": 1500,
+      "hardCeilingPerDay": 5000,
+      "warmingRequiredHours": 72,
+      "acknowledgmentVersion": "v2-2026-07"
+    }
+  },
+  "webhookEvents": {
+    "all": [
+      "message.received",
+      "message.sent",
+      "account.connected",
+      "account.disconnected",
+      "account.banned",
+      "contacts.updated",
+      "tunnel.started",
+      "tunnel.url_changed",
+      "tunnel.stopped",
+      "sync.started",
+      "sync.completed",
+      "sync.failed",
+      "media.discovered",
+      "media.downloaded",
+      "media.failed",
+      "media.deleted",
+      "queue.item.enqueued",
+      "queue.item.processing",
+      "queue.item.sent",
+      "queue.item.failed",
+      "queue.item.cancelled",
+      "queue.batch.created",
+      "queue.batch.completed",
+      "queue.batch.cancelled",
+      "account.danger_mode_enabled",
+      "account.danger_mode_disabled",
+      "license.activated",
+      "license.deactivated",
+      "license.tier_changed"
+    ],
+    "free": [
+      "message.received",
+      "message.sent",
+      "account.connected",
+      "account.disconnected",
+      "tunnel.url_changed",
+      "tunnel.stopped",
+      "license.activated",
+      "license.deactivated",
+      "license.tier_changed"
+    ],
+    "counts": {
+      "all": 29,
+      "free": 9,
+      "pro": 20
+    }
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/v1/accounts",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/ai-context",
+      "scope": "read",
+      "pro": true,
+      "proFeature": "localMessageCache",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/antiban",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/chats",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/contacts",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/contacts/:contactId",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/groups",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/groups",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/groups/:groupId",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/accounts/:id/groups/:groupId/description",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/groups/:groupId/invite",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/groups/:groupId/leave",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/groups/:groupId/participants",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/accounts/:id/groups/:groupId/subject",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/media",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/accounts/:id/media/:mediaId",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/media/:mediaId",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/media/:mediaId/download",
+      "scope": "send",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/media/:mediaId/file",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/media/:mediaId/thumbnail",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/media/stats",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/messages",
+      "scope": "read",
+      "pro": true,
+      "proFeature": "localMessageCache",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/messages",
+      "scope": "send",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/messages/media",
+      "scope": "send",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": true
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/queue/import",
+      "scope": "send",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/queue/items",
+      "scope": "send",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/sync",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "localMessageCache",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/api-keys",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/api-keys",
+      "scope": "admin",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/api-keys/:id",
+      "scope": "admin",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/api-keys/:id/rotate",
+      "scope": "admin",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/capabilities",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/media/cleanup",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "apiWriteEnabled",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/media/queue",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/network/status",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/queue/batches",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/queue/batches/:batchId",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/queue/batches/:batchId/retry",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/queue/items",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/queue/items/:itemId",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/queue/items/:itemId/retry",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/queue/pause",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/queue/resume",
+      "scope": "admin",
+      "pro": true,
+      "proFeature": "scheduledMessages",
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/queue/status",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/status",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sync/status",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/version",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/webhooks",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/webhooks",
+      "scope": "admin",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/webhooks/:id",
+      "scope": "admin",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/webhooks/:id",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/webhooks/:id",
+      "scope": "admin",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/webhooks/:id/deliveries",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/webhooks/:id/test",
+      "scope": "admin",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    }
+  ],
+  "ai": {
+    "status": "coming-soon",
+    "aiEnabled": {
+      "free": false,
+      "pro": true
+    }
+  }
+}

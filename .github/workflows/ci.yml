@@ -19,3 +19,4 @@ jobs:
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
+      - run: npm test # unit + mock-server integration + contract-drift guard
