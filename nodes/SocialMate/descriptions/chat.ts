@@ -12,7 +12,7 @@ export const chatOperations: INodeProperties[] = [
 				name: 'Get Many',
 				value: 'getMany',
 				action: 'Get many chats',
-				description: 'List all chats (1:1, groups and broadcasts) for the account',
+				description: 'Lists every chat (1:1, group and broadcast) on the WhatsApp account. Returns each chat\'s ID, name, type and unread count. Use this to discover which conversations exist and to get a chat ID to pass as chatId to Send Text, Send Media or Get AI Context. Does not return message contents — use Message: Get AI Context or Search for that.',
 			},
 		],
 		default: 'getMany',

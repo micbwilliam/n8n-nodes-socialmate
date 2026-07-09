@@ -128,8 +128,18 @@ Then add **SocialMate** as a tool on an **AI Agent** node and pick the operation
 before replying — a combination no official / Business-API node offers.
 
 > Some n8n versions have an open bug where certain community-node tools hand the agent an empty
-> observation ([n8n#26202](https://github.com/n8n-io/n8n/issues/26202)). If you hit it, upgrade n8n
-> or call the operation from a normal (non-agent) node.
+> observation ([n8n#26202](https://github.com/n8n-io/n8n/issues/26202)). If you hit it, upgrade n8n,
+> call the operation from a normal (non-agent) node, or use **MCP** (below), which bypasses it.
+
+**Prefer MCP (Claude Desktop / Cursor / any client)?** SocialMate ships a native **Model Context
+Protocol** server, `socialmate-mcp`, exposing 30 WhatsApp tools (see **API & Integrations → MCP** in
+the app for the copy-paste config), plus an n8n MCP Server Trigger recipe. One thing to know: MCP is
+request/response with **no inbound push**, so to auto-react to incoming messages you either poll the
+`whatsapp_fetch_new_messages` tool or drive the loop from the **SocialMate Trigger** below. Full
+walkthrough + the `$fromAI` pattern + 11 use cases in
+**[docs/AI-AGENT-TOOL-GUIDE.md](docs/AI-AGENT-TOOL-GUIDE.md)**. Importable examples:
+[`examples/ai-agent-tool.json`](examples/ai-agent-tool.json) and
+[`examples/mcp-server-trigger.json`](examples/mcp-server-trigger.json).
 
 ## Trigger events
 
@@ -259,6 +269,8 @@ Free is capped at **200 sends/day**; Pro starts at **500/day** per account and s
 
 Importable workflows live in [`examples/`](examples/):
 
+- [`ai-agent-tool.json`](examples/ai-agent-tool.json) — **SocialMate as an AI Agent tool**: an AI Agent that calls SocialMate tools (Get AI Context, Look Up Contact) on demand and replies. See [docs/AI-AGENT-TOOL-GUIDE.md](docs/AI-AGENT-TOOL-GUIDE.md).
+- [`mcp-server-trigger.json`](examples/mcp-server-trigger.json) — **WhatsApp MCP server built in n8n**: expose SocialMate to Claude Desktop / Cursor via the MCP Server Trigger.
 - [`real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json) — a WhatsApp AI concierge (Trigger → Get AI Context → DeepSeek → reply).
 - [`auto-reply-trigger.json`](examples/auto-reply-trigger.json) — a minimal Trigger → Send Text auto-reply round-trip.
 - [`scheduled-bulk-send.json`](examples/scheduled-bulk-send.json) — schedule a daily batch of queued, personalized reminders to opted-in contacts via the smart queue (Pro).

@@ -3,6 +3,7 @@
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Communication", "Marketing"],
+	"alias": ["WhatsApp", "AI", "agent", "chatbot", "trigger", "incoming message", "webhook", "Baileys"],
 	"resources": {
 		"credentialDocumentation": [{ "url": "https://socialmate.app/docs/n8n" }],
 		"primaryDocumentation": [{ "url": "https://socialmate.app/docs/n8n" }]

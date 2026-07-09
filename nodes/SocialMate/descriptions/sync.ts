@@ -8,8 +8,8 @@ export const syncOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['sync'] } },
 		options: [
-			{ name: 'Trigger', value: 'trigger', action: 'Trigger a sync', description: 'Start a sync job (requires Pro)' },
-			{ name: 'Get Status', value: 'getStatus', action: 'Get sync status', description: 'Recent sync jobs and their progress' },
+			{ name: 'Trigger', value: 'trigger', action: 'Trigger a sync', description: 'Administrative — starts a background job that pulls contacts, chats and/or message history from WhatsApp into the local database. Returns a job status immediately. Requires Pro. Rarely needed from an agent — history syncs automatically.' },
+			{ name: 'Get Status', value: 'getStatus', action: 'Get sync status', description: 'Returns the most recent sync jobs and their progress. Use to check whether a sync has finished.' },
 		],
 		default: 'trigger',
 	},

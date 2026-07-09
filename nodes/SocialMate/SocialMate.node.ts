@@ -62,7 +62,8 @@ export class SocialMate implements INodeType {
 		group: ['output'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Automate WhatsApp through your self-hosted SocialMate server',
+		description:
+			'Control WhatsApp from n8n or an AI agent: send & read messages, look up contacts, manage groups, download media, queue campaigns, and fetch conversation memory (Get AI Context) — all through your self-hosted SocialMate server.',
 		// Expose every operation to n8n AI Agents as callable tools. The agent
 		// reads each operation/parameter description to decide what to call, so
 		// keep those descriptions action-oriented. NOTE: the n8n instance must
@@ -278,7 +279,7 @@ export class SocialMate implements INodeType {
 					else if (operation === 'get') responseData = await socialmateApiRequest.call(this, 'GET', `${base}/${this.getNodeParameter('groupId', i)}`);
 					else if (operation === 'create') {
 						const participants = splitCsv(this.getNodeParameter('participants', i) as string).map(toParticipantJid);
-						responseData = await socialmateApiRequest.call(this, 'POST', base, { name: this.getNodeParameter('name', i), participants });
+						responseData = await socialmateApiRequest.call(this, 'POST', base, { name: this.getNodeParameter('groupName', i), participants });
 					} else if (operation === 'updateParticipants') {
 						const participants = splitCsv(this.getNodeParameter('participants', i) as string).map(toParticipantJid);
 						responseData = await socialmateApiRequest.call(this, 'POST', `${base}/${this.getNodeParameter('groupId', i)}/participants`, {

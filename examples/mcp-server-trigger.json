@@ -1,0 +1,88 @@
+{
+  "name": "WhatsApp MCP Server (n8n) — expose SocialMate to Claude/Cursor",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "socialmate-whatsapp"
+      },
+      "id": "bb111111-1111-4111-8111-111111111111",
+      "name": "MCP Server Trigger",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1,
+      "position": [340, 320],
+      "webhookId": "socialmate-mcp-server"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "accountId": "={{ $fromAI('account_id', 'The SocialMate account id to send from (from List Accounts). Leave blank to use the only account.', 'string') }}",
+        "chatId": "={{ $fromAI('chat_id', 'Recipient: a phone number in full international format with no + or spaces (e.g. 14155551234), or a group JID ending in @g.us', 'string') }}",
+        "text": "={{ $fromAI('text', 'The message text to send', 'string') }}",
+        "sendOptions": {}
+      },
+      "id": "bb222222-2222-4222-8222-222222222222",
+      "name": "Send WhatsApp Message",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [640, 120]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAiContext",
+        "accountId": "={{ $fromAI('account_id', 'The SocialMate account id. Leave blank to use the only account.', 'string') }}",
+        "chatId": "={{ $fromAI('chat_id', 'The chat to read: a phone number (international, no +) or a group JID ending in @g.us', 'string') }}",
+        "aiContextOptions": {
+          "maxMessages": 40,
+          "format": "transcript",
+          "order": "newest"
+        }
+      },
+      "id": "bb333333-3333-4333-8333-333333333333",
+      "name": "Read Conversation",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "getMany",
+        "accountId": "={{ $fromAI('account_id', 'The SocialMate account id. Leave blank to use the only account.', 'string') }}"
+      },
+      "id": "bb444444-4444-4444-8444-444444444444",
+      "name": "List Chats",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [640, 480]
+    },
+    {
+      "parameters": {
+        "content": "## WhatsApp MCP Server, built in n8n\n\nTurns this n8n workflow into an **MCP server** so any MCP client — **Claude Desktop, Cursor, Cline** — can control WhatsApp through SocialMate as native tools. It also **sidesteps the community-node tool bug** (n8n #26202), because MCP tools run outside n8n's internal tool queue.\n\n**Setup**\n1. Set **`N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true`** on the n8n instance.\n2. One **SocialMate API** credential on each SocialMate tool node (admin-scope key; `http://127.0.0.1:3456` or your Pro named tunnel). *Read/Get AI Context are Pro.*\n3. **Activate**. Open the **MCP Server Trigger** node and copy its **Production SSE URL**.\n4. In Claude Desktop's MCP config, add the server:\n   `npx mcp-remote <SSE_URL> --header \"Authorization: Bearer <your-n8n-auth>\"`.\n\nEach tool's parameters use **`$fromAI(...)`**, so the MCP client's model fills in the recipient, text, etc. Add more SocialMate tool nodes (Send Media, Queue, Group…) to widen what the agent can do.\n\n> Prefer a **standalone** server that doesn't need n8n? SocialMate also ships a native MCP server — see the app's **API & Integrations → MCP** panel and `docs/AI-AGENT-TOOL-GUIDE.md`.",
+        "height": 460,
+        "width": 560
+      },
+      "id": "bb555555-5555-4555-8555-555555555555",
+      "name": "How to use",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-260, 120]
+    }
+  ],
+  "connections": {
+    "Send WhatsApp Message": {
+      "ai_tool": [[{ "node": "MCP Server Trigger", "type": "ai_tool", "index": 0 }]]
+    },
+    "Read Conversation": {
+      "ai_tool": [[{ "node": "MCP Server Trigger", "type": "ai_tool", "index": 0 }]]
+    },
+    "List Chats": {
+      "ai_tool": [[{ "node": "MCP Server Trigger", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

@@ -34,8 +34,9 @@ They are scheduled in §7.
 
 ---
 
-## 2. Shipped in this release (v2.7.0 — node-only)
+## 2. Shipped
 
+### v2.7.0 — node hardening
 | # | Change | Type | Files |
 |---|--------|------|-------|
 | 1 | **Fix: send `429` anti-ban block no longer hangs/silently fails** | 🔴 Bug | `GenericFunctions.ts`, `SocialMate.node.ts` |
@@ -44,7 +45,31 @@ They are scheduled in §7.
 | 4 | **Test suite** — 31 tests: unit, mock-server integration, HMAC, contract-drift guard + opt-in live smoke | ✅ Quality | `test/**`, `scripts/**`, `vitest.config.ts` |
 | 5 | **Codex node-type prefix fixed** (`n8n-nodes-base.*` → `n8n-nodes-socialmate.*`) | 🧹 Fix | `*.node.json` |
 
-See §4 for bug detail and §6/§7 for what comes next.
+### v2.8.0 — "best WhatsApp AI agent tool for n8n" productization
+| # | Change | Type | Files |
+|---|--------|------|-------|
+| 6 | **All ~50 operation descriptions rewritten to the AI-tool bar** (returns/when-not-to-use/sibling disambiguation; admin ops de-prioritized) | ✨ | `descriptions/*.ts` |
+| 7 | **`$fromAI` fix** — Group→Create field `name`→`groupName` (n8n#28261); node `alias` + control-surface description | ✨ | `descriptions/group.ts`, `SocialMate.node.ts`, `*.node.json` |
+| 8 | **AI-Agent-tool + MCP examples + deep guide** | 📚 | `examples/ai-agent-tool.json`, `examples/mcp-server-trigger.json`, `docs/AI-AGENT-TOOL-GUIDE.md` |
+
+### App (SM4) — standalone MCP server
+| # | Change | Type | Files |
+|---|--------|------|-------|
+| 9 | **`socialmate-mcp`** — a native Model Context Protocol server (**30 WhatsApp tools**: messaging, memory, contacts, groups, full queue control, sync, anti-ban, capabilities) so Claude Desktop / Cursor / any MCP client controls WhatsApp. Thin translator over the REST API → reuses auth/scope/tier/anti-ban/audit. Integration-tested. | ✨ | `mcp/` (`index.mjs`, `tools.mjs`, `test.mjs`) |
+| 9a | **Inbound-for-MCP** — MCP is pull-only (no push), so added a **`afterTs` poll cursor** to `GET /messages` (+ n8n `message:search` filter) and a `whatsapp_fetch_new_messages` MCP tool; documented the honest "poll or bridge via the Trigger/webhook" pattern everywhere. Renamed `get_conversation` → `get_ai_context` (deprecated alias kept). | ✨ | `mcp/tools.mjs`, SM4 `api-server.ts`/`sync.ts`, `descriptions/message.ts`, docs |
+| 10 | **AI blog + support + integration catalog** now advertise the AI-agent-tool + MCP capability (incl. the pull-only/bridge nuance); "only native integration" hardcodes updated to "native n8n node + open MCP protocol" (still no per-service connector; AI generation still "coming soon"). New `/docs/mcp-server` page + the two GEO landing pages. | 📣 | `Copy.php`, `ProductContext.php`, `PostSchema.php`, `SupportContext.php`, `Docs.php`, `mcp-server.php`, `AiAgentTool.php` |
+
+**Invariant update:** MCP is an **open-protocol surface** (like the REST API + webhooks), NOT a
+per-service native connector. n8n remains the only native *node* integration.
+
+### Next milestone — conversational primitives (app-first)
+Not shipped anywhere (absent from the REST API, so absent from n8n and MCP). Each needs a new adapter
+method → REST route → n8n op → MCP tool → docs, with anti-ban review:
+**reply/quote** (quoted reply), **mark-read** (read receipts), **typing** (presence), **reaction**
+(emoji react). These are the table-stakes primitives WAHA/Evolution ship and we don't (see §6/§7);
+reply/quote + typing are the highest-value for natural agents and should land first.
+
+See §4 for bug detail and §6/§7 for the remaining app-first conversational primitives.
 
 ---
 

@@ -12,25 +12,25 @@ export const messageOperations: INodeProperties[] = [
 				name: 'Get AI Context',
 				value: 'getAiContext',
 				action: 'Get AI conversation context',
-				description: 'Role-mapped, token-windowed transcript + messages of a chat, ready to feed an AI agent (requires Pro)',
+				description: 'Returns a chat\'s recent history as a role-mapped, token-windowed transcript (the contact = user, your account = assistant) ready to paste into an AI agent\'s prompt or memory. This is the recommended way to give an agent conversation memory before it replies. Returns {transcript, messages, meta}. Use this — not Search — to feed an LLM. Requires Pro.',
 			},
 			{
 				name: 'Search / List',
 				value: 'search',
 				action: 'Search or list messages',
-				description: 'Read persisted message history, optionally full-text searched (requires Pro)',
+				description: 'Reads raw persisted message rows for a chat, optionally full-text searched. Returns message records (ID, sender, body, timestamp). Use to find or count specific messages; to give an AI agent conversation memory, use Get AI Context instead. Requires Pro.',
 			},
 			{
 				name: 'Send Media',
 				value: 'sendMedia',
 				action: 'Send a media message',
-				description: 'Send an image, video, audio, document or sticker (requires Pro)',
+				description: 'Sends an image, video, audio, document or sticker to a chat, from a URL, an input binary field, or base64. Returns the message ID and status. Use to send a file, photo or voice note. Requires Pro.',
 			},
 			{
 				name: 'Send Text',
 				value: 'sendText',
 				action: 'Send a text message',
-				description: 'Send a plain text WhatsApp message (available on every tier)',
+				description: 'Sends a plain-text WhatsApp message to one chat (a phone number or a group JID). Returns the message ID and delivery status. This is the primary way an agent replies to or notifies someone. For files use Send Media; for many recipients use Queue: Bulk Import. Available on every tier.',
 			},
 		],
 		default: 'sendText',
@@ -97,6 +97,7 @@ export const messageFields: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		placeholder: 'https://example.com/photo.jpg',
+		description: 'Public https URL of the file to send. The server fetches it. Preferred over base64: a rate-limited URL send can auto-queue on Pro.',
 		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'], mediaSource: ['url'] } },
 	},
 	{
@@ -112,6 +113,7 @@ export const messageFields: INodeProperties[] = [
 		name: 'mediaBase64',
 		type: 'string',
 		default: '',
+		description: 'The file encoded as a base64 string (max ~20 MB). Prefer a URL where possible — base64 sends cannot auto-queue if rate-limited.',
 		displayOptions: { show: { resource: ['message'], operation: ['sendMedia'], mediaSource: ['base64'] } },
 	},
 	{
@@ -172,6 +174,7 @@ export const messageFields: INodeProperties[] = [
 		options: [
 			{ displayName: 'Chat ID', name: 'chatId', type: 'string', default: '', description: 'Restrict to one chat (phone digits or group JID)' },
 			{ displayName: 'Search Text', name: 'search', type: 'string', default: '', description: 'Full-text search across messages' },
+			{ displayName: 'After Timestamp (Ms)', name: 'afterTs', type: 'number', default: 0, description: 'Return only messages after this Unix-ms timestamp. Use as a poll cursor to fetch new arrivals since the last run (pass the newest timestamp you saw); 0 returns everything.' },
 		],
 	},
 	{

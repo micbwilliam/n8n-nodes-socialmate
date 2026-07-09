@@ -1,3 +1,30 @@
+## [2.8.0] — 2026-07-09
+
+Productizes the node as the best **WhatsApp AI agent tool for n8n** (and MCP). See
+[`docs/AI-AGENT-TOOL-GUIDE.md`](docs/AI-AGENT-TOOL-GUIDE.md).
+
+### Added
+- **AI-grade operation descriptions.** All ~50 operations rewritten so an AI Agent reliably selects
+  and fills them — third person, what each returns, when-not-to-use, and sibling disambiguation
+  (e.g. Get AI Context vs Search). Admin/diagnostic ops are prefixed "Administrative —" so a
+  conversational agent deprioritizes them.
+- **AI-Agent-tool + MCP examples:** [`examples/ai-agent-tool.json`](examples/ai-agent-tool.json)
+  (SocialMate on an AI Agent's tool input, with `$fromAI`) and
+  [`examples/mcp-server-trigger.json`](examples/mcp-server-trigger.json) (expose SocialMate to Claude
+  Desktop / Cursor via n8n's MCP Server Trigger). Plus the deep guide + 11 use cases.
+- **Discoverability:** node `alias` list (WhatsApp, AI, agent, chatbot, MCP…) and a control-surface
+  node description.
+- **Poll cursor for inbound (Message → Search / List):** a new **After Timestamp (`afterTs`)** filter
+  returns only messages after a Unix-ms cursor — pass the newest timestamp you saw to fetch just
+  what's new. This is the pull-side answer to "how does an agent know a message arrived" when it can't
+  use the Trigger (e.g. a pure-MCP agent). The standalone `socialmate-mcp` server (now 30 WhatsApp
+  tools) exposes it as `whatsapp_fetch_new_messages`.
+
+### Changed
+- **BREAKING (Group → Create):** the "Group Name" field key is renamed `name` → `groupName` so n8n's
+  `$fromAI` ✦ button works (n8n#28261). The API still receives `{name}`. Re-enter the group name in
+  any saved Group: Create step after upgrading.
+
 ## [2.7.0] — 2026-07-08
 
 Production-hardening release: two correctness fixes on the most common paths, first-class AI-Agent
