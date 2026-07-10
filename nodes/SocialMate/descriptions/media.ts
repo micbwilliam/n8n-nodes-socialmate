@@ -17,6 +17,7 @@ export const mediaOperations: INodeProperties[] = [
 			{ name: 'Get Many', value: 'getMany', action: 'Get many media items', description: 'Lists media items with optional filters (chat, type, direction, state, search). Returns each item\'s ID, type, size and state — pass an ID to Download File. Use to find files shared in a chat.' },
 			{ name: 'Get Stats', value: 'getStats', action: 'Get media stats', description: 'Returns media counts and total bytes by type for the account. Use to report local storage usage.' },
 			{ name: 'Run Cleanup', value: 'cleanup', action: 'Run media cleanup', description: 'Administrative — applies retention/quota rules now to free disk, server-wide. Requires Pro.' },
+			{ name: 'Set Context', value: 'setContext', action: 'Set media context', description: 'Caches the description or transcript YOUR AI produced for a media item (Agent Memory), so the same photo/voice note/document is never re-analyzed. It then comes back already described inside Get AI Context. SocialMate stores your description; it never generates one. Requires Pro.' },
 		],
 		default: 'getMany',
 	},
@@ -29,7 +30,7 @@ const mediaIdProperty: INodeProperties = {
 	default: '',
 	required: true,
 	description: 'The media item\'s ID, as returned by Get Many or a media.discovered trigger event',
-	displayOptions: { show: { resource: ['media'], operation: ['get', 'getFile', 'getThumbnail', 'forceDownload', 'delete'] } },
+	displayOptions: { show: { resource: ['media'], operation: ['get', 'getFile', 'getThumbnail', 'forceDownload', 'delete', 'setContext'] } },
 };
 
 export const mediaFields: INodeProperties[] = [
@@ -42,6 +43,28 @@ export const mediaFields: INodeProperties[] = [
 		required: true,
 		hint: 'The name of the output binary field to put the downloaded file in',
 		displayOptions: { show: { resource: ['media'], operation: ['getFile', 'getThumbnail'] } },
+	},
+	{
+		displayName: 'Context',
+		name: 'context',
+		type: 'string',
+		typeOptions: { rows: 3 },
+		default: '',
+		required: true,
+		description: 'The description or transcript your model produced for this media. Cached so it is never re-analyzed.',
+		displayOptions: { show: { resource: ['media'], operation: ['setContext'] } },
+	},
+	{
+		displayName: 'Options',
+		name: 'contextOptions',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: { show: { resource: ['media'], operation: ['setContext'] } },
+		options: [
+			{ displayName: 'Source', name: 'source', type: 'string', default: '', description: 'What produced the context, e.g. "gpt-4o" or "whisper-1"' },
+			{ displayName: 'Overwrite', name: 'overwrite', type: 'boolean', default: true, description: 'Whether to replace existing context. Turn off to fail (409) if the item already has context.' },
+		],
 	},
 	{
 		displayName: 'Filters',
@@ -58,6 +81,18 @@ export const mediaFields: INodeProperties[] = [
 				type: 'options',
 				default: 'all',
 				options: ['all', 'received', 'sent'].map((v) => ({ name: v, value: v })),
+			},
+			{
+				displayName: 'Has Cached Context',
+				name: 'hasContext',
+				type: 'options',
+				default: 'all',
+				description: 'Agent Memory: filter by whether the item already has a saved AI description. Pick "no" to list only what your agent still needs to analyze.',
+				options: [
+					{ name: 'All', value: 'all' },
+					{ name: 'Yes (Already Described)', value: 'true' },
+					{ name: 'No (Needs Analysis)', value: 'false' },
+				],
 			},
 			{ displayName: 'Search', name: 'search', type: 'string', default: '' },
 			{

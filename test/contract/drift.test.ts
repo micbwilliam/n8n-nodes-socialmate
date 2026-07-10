@@ -34,6 +34,7 @@ const NODE_ENDPOINTS: string[] = [
 	'GET /v1/accounts/:id/chats',
 	'GET /v1/accounts/:id/contacts',
 	'GET /v1/accounts/:id/contacts/:contactId',
+	'PATCH /v1/accounts/:id/contacts/:contactId',
 	'GET /v1/accounts/:id/messages',
 	'POST /v1/accounts/:id/messages',
 	'POST /v1/accounts/:id/messages/read',
@@ -54,6 +55,7 @@ const NODE_ENDPOINTS: string[] = [
 	'GET /v1/accounts/:id/media/:mediaId/file',
 	'GET /v1/accounts/:id/media/:mediaId/thumbnail',
 	'POST /v1/accounts/:id/media/:mediaId/download',
+	'PUT /v1/accounts/:id/media/:mediaId/context',
 	'DELETE /v1/accounts/:id/media/:mediaId',
 	'GET /v1/media/queue',
 	'POST /v1/media/cleanup',
@@ -111,8 +113,8 @@ describe('Webhook event drift vs the app', () => {
 	const nodeAll = EVENT_OPTIONS.map((e) => e.value);
 	const nodeFree = EVENT_OPTIONS.filter((e) => !e.name.includes('(Pro)')).map((e) => e.value);
 
-	it('exposes exactly the app\'s 32 events', () => {
-		expect(nodeAll.length).toBe(32);
+	it('exposes exactly the app\'s 33 events', () => {
+		expect(nodeAll.length).toBe(33);
 		expect([...nodeAll].sort()).toEqual([...facts.webhookEvents.all].sort());
 	});
 

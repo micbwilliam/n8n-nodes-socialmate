@@ -78,9 +78,9 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 |---|---|---|
 | **Message** | Send Text (with Reply To) · React · Mark Read · Send Typing | Send Media · Send Poll · Send Location · Send Contact · Get AI Context · Search / List history |
 | **Chat** | Get Many | — |
-| **Contact** | Get · Get Many | — |
+| **Contact** | Get · Get Many | Update (Agent Memory — save a name/notes/tags your agent learned) |
 | **Group** | Get Many · Get · Get Invite Link | Create · Update Participants · Set Subject · Set Description · Leave |
-| **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup |
+| **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup · Set Context (Agent Memory — cache an AI description) |
 | **Queue** | Get Status · Get Items · Get Batches | Enqueue · Bulk Import · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
 | **Account** | Get Many · Get · Get Anti-Ban Status | — |
 | **Sync** | Get Status | Trigger |
@@ -158,12 +158,13 @@ send budget — an agent can be human without spending its message allowance.
 
 ## Trigger events
 
-The **SocialMate Trigger** covers all **32 events**. **9 are available on Free** —
+The **SocialMate Trigger** covers all **33 events**. **9 are available on Free** —
 `message.received`, `message.sent`, `account.connected`, `account.disconnected`,
 `tunnel.url_changed`, `tunnel.stopped`, `license.activated`, `license.deactivated`,
-`license.tier_changed`; the other 23 (incl. `tunnel.started`, the conversational events
-`message.reaction` / `poll.vote` / `group.participants_updated`, and the High-Volume Mode
-`account.danger_mode_*` events) require Pro and are labelled `(Pro)` in the picker:
+`license.tier_changed`; the other 24 (incl. `tunnel.started`, the conversational events
+`message.reaction` / `poll.vote` / `group.participants_updated`, the Agent Memory
+`media.context_updated` event, and the High-Volume Mode `account.danger_mode_*` events)
+require Pro and are labelled `(Pro)` in the picker:
 
 - **Messaging:** `message.received`, `message.sent`, `message.reaction` (Pro), `poll.vote` (Pro)
 - **Groups:** `group.participants_updated` (Pro) — join, leave, promote, demote
@@ -295,6 +296,7 @@ Importable workflows live in [`examples/`](examples/):
 - [`drip-onboarding-sequence.json`](examples/drip-onboarding-sequence.json) — Trigger → three scheduled Queue Enqueues that drip a welcome sequence over a few days (Pro).
 - [`order-confirmation-webhook.json`](examples/order-confirmation-webhook.json) — your store's order webhook → Send Text order confirmation.
 - [`new-lead-alert.json`](examples/new-lead-alert.json) — Trigger → forward a short summary of each inbound message to your team group.
+- [`vision-memory-loop.json`](examples/vision-memory-loop.json) — **Agent Memory (Pro):** `media.discovered` → skip already-described items → Download File → *your* vision/transcription model → Set Media Context. Each photo/voice note is described **once** and then comes back as `[image: …]` inside Get AI Context — no re-analysis, fewer tokens.
 
 ## Development
 

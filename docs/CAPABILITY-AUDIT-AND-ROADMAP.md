@@ -82,9 +82,9 @@ operations**, **29 trigger events**.
 |---|---|---|
 | **Message** | Send Text · Send Media (image/video/audio/document/sticker; url/binary/base64 + caption) · **Get AI Context** (role-mapped transcript for LLMs) · Search/List history | Text = Free; Media/AI-Context/Search = Pro |
 | **Chat** | Get Many | Free |
-| **Contact** | Get · Get Many (search) | Free |
+| **Contact** | Get · Get Many (search) · Update (Agent Memory) | Reads Free; Update (enrichment) Pro |
 | **Group** | Get Many · Get · Get Invite Link · Create · Update Participants (add/remove/promote/demote) · Set Subject · Set Description · Leave | Reads Free; writes Pro |
-| **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue · Force Download · Delete · Run Cleanup | Reads Free; writes/cleanup Pro |
+| **Media** | Get Many (incl. hasContext filter) · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue · Force Download · Delete · Run Cleanup · Set Context (Agent Memory) | Reads Free; writes/cleanup/context Pro |
 | **Queue** (smart scheduling) | Enqueue · Bulk Import (mustache templating) · Get Status · Get Items · Get Batches · Cancel/Retry Item · Cancel/Retry Batch · Pause · Resume | Reads Free; writes Pro |
 | **Account** | Get Many · Get · Get Anti-Ban Status | Free |
 | **Sync** | Trigger · Get Status | Trigger Pro; status Free |

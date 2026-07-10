@@ -1,0 +1,108 @@
+{
+  "id": "socialmateVisionMemory1",
+  "name": "WhatsApp Vision Memory (describe media once, remember forever)",
+  "nodes": [
+    {
+      "parameters": {
+        "events": ["media.discovered"],
+        "options": {}
+      },
+      "id": "b1111111-1111-4111-8111-111111111111",
+      "name": "SocialMate Trigger",
+      "type": "n8n-nodes-socialmate.socialMateTrigger",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "webhookId": "socialmate-vision-memory"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.data.media.needsContext }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2222222-2222-4222-8222-222222222222",
+      "name": "Needs analysis?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "getFile",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "mediaId": "={{ $('SocialMate Trigger').item.json.data.media.id }}",
+        "binaryPropertyName": "data"
+      },
+      "id": "b3333333-3333-4333-8333-333333333333",
+      "name": "Download File",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "content": "## ⬅ Drop YOUR vision / transcription model here\n\nReplace this note with the AI node you already use — e.g. an **OpenAI** \"Analyze Image\", a **Google Gemini** vision node, or a **Whisper** transcription node. Feed it the binary `data` field from **Download File** and have it output a short description/transcript.\n\nSocialMate ships **no** model — it just stores what your model produces.",
+        "height": 260,
+        "width": 360,
+        "color": 4
+      },
+      "id": "b4444444-4444-4444-8444-444444444444",
+      "name": "Your AI model (bring your own)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [720, 120]
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "setContext",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "mediaId": "={{ $('SocialMate Trigger').item.json.data.media.id }}",
+        "context": "={{ $json.description }}",
+        "contextOptions": { "source": "your-vision-model" }
+      },
+      "id": "b5555555-5555-4555-8555-555555555555",
+      "name": "Set Media Context",
+      "type": "n8n-nodes-socialmate.socialMate",
+      "typeVersion": 1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "content": "## Vision Memory\n\n**Why:** a customer sends a photo, an invoice, a voice note. Your AI analyzes it — but on the next turn, `get_ai_context` only sees a bare `[image]` and pays to analyze it again. This loop **describes each media item exactly once** and caches the result in SocialMate (Agent Memory, **Pro**).\n\n**Flow:** `media.discovered` fires → **Needs analysis?** skips items already described (`needsContext:false`) → **Download File** pulls the bytes → **your own model** describes them → **Set Media Context** saves the description.\n\nFrom then on, that media comes back to any agent as `[image: <description>]` inside **Get AI Context** — no re-analysis, fewer tokens.\n\n**Setup:**\n1. One **SocialMate API** credential (admin-scope key so the Trigger can self-register). Server URL `http://127.0.0.1:3456` or your named-tunnel host.\n2. Swap the yellow note for the AI node you use; map its text output into **Set Media Context → Context**.\n3. **Save & Activate**, then send the number a photo to test.",
+        "height": 420,
+        "width": 440
+      },
+      "id": "b6666666-6666-4666-8666-666666666666",
+      "name": "How to use",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -180]
+    }
+  ],
+  "connections": {
+    "SocialMate Trigger": {
+      "main": [[{ "node": "Needs analysis?", "type": "main", "index": 0 }]]
+    },
+    "Needs analysis?": {
+      "main": [[{ "node": "Download File", "type": "main", "index": 0 }]]
+    },
+    "Download File": {
+      "main": [[{ "node": "Set Media Context", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

@@ -195,6 +195,19 @@ export class SocialMate implements INodeType {
 					if (operation === 'get') {
 						const contactId = this.getNodeParameter('contactId', i) as string;
 						responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}/contacts/${contactId}`);
+					} else if (operation === 'update') {
+						// Agent Memory: save what the agent learned. Only fields the user
+						// added are sent, so an omitted field is left unchanged on the app.
+						const contactId = this.getNodeParameter('contactId', i) as string;
+						const enrichment = this.getNodeParameter('enrichment', i, {}) as IDataObject;
+						const body: IDataObject = {};
+						for (const key of ['customName', 'notes', 'email', 'company'] as const) {
+							if (enrichment[key] !== undefined) body[key] = enrichment[key];
+						}
+						if (typeof enrichment.tags === 'string' && enrichment.tags.trim()) {
+							body.tags = enrichment.tags.split(',').map((t) => t.trim()).filter(Boolean);
+						}
+						responseData = await socialmateApiRequest.call(this, 'PATCH', `/v1/accounts/${acc()}/contacts/${encodeURIComponent(contactId)}`, body);
 					} else {
 						const search = this.getNodeParameter('search', i, '') as string;
 						const qs: IDataObject = search ? { search } : {};
@@ -379,6 +392,14 @@ export class SocialMate implements INodeType {
 						const mediaId = this.getNodeParameter('mediaId', i) as string;
 						if (operation === 'get') responseData = await socialmateApiRequest.call(this, 'GET', `${base}/${mediaId}`);
 						else if (operation === 'forceDownload') responseData = await socialmateApiRequest.call(this, 'POST', `${base}/${mediaId}/download`);
+						else if (operation === 'setContext') {
+							// Agent Memory: cache the description the agent's own model produced.
+							const opts = this.getNodeParameter('contextOptions', i, {}) as IDataObject;
+							const body: IDataObject = { context: this.getNodeParameter('context', i) as string };
+							if (opts.source) body.source = opts.source;
+							if (opts.overwrite !== undefined) body.overwrite = opts.overwrite;
+							responseData = await socialmateApiRequest.call(this, 'PUT', `${base}/${encodeURIComponent(mediaId)}/context`, body);
+						}
 						else if (operation === 'delete') responseData = await socialmateApiRequest.call(this, 'DELETE', `${base}/${mediaId}`);
 						else if (operation === 'getThumbnail') {
 							// Stream the inline JPEG thumbnail into a binary field.

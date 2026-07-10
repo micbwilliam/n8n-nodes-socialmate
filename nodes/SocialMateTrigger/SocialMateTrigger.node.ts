@@ -36,6 +36,7 @@ export const EVENT_OPTIONS: Array<{ name: string; value: string }> = [
 	{ name: 'Media Downloaded (Pro)', value: 'media.downloaded' },
 	{ name: 'Media Failed (Pro)', value: 'media.failed' },
 	{ name: 'Media Deleted (Pro)', value: 'media.deleted' },
+	{ name: 'Media Context Updated (Pro)', value: 'media.context_updated' },
 	{ name: 'Queue Item Enqueued (Pro)', value: 'queue.item.enqueued' },
 	{ name: 'Queue Item Processing (Pro)', value: 'queue.item.processing' },
 	{ name: 'Queue Item Sent (Pro)', value: 'queue.item.sent' },

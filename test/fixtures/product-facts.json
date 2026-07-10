@@ -15,6 +15,7 @@
       "webhookMaxEndpoints": 2,
       "webhookDailyQuota": 100,
       "scheduledMessages": false,
+      "agentMemory": false,
       "autoStart": false,
       "autoReconnect": false
     },
@@ -31,6 +32,7 @@
       "webhookMaxEndpoints": "unlimited",
       "webhookDailyQuota": "unlimited",
       "scheduledMessages": true,
+      "agentMemory": true,
       "autoStart": true,
       "autoReconnect": true
     },
@@ -47,6 +49,7 @@
       "webhookMaxEndpoints": "unlimited",
       "webhookDailyQuota": "unlimited",
       "scheduledMessages": true,
+      "agentMemory": true,
       "autoStart": true,
       "autoReconnect": true
     },
@@ -63,6 +66,7 @@
       "webhookMaxEndpoints": "unlimited",
       "webhookDailyQuota": "unlimited",
       "scheduledMessages": true,
+      "agentMemory": true,
       "autoStart": true,
       "autoReconnect": true
     }
@@ -118,6 +122,7 @@
       "media.downloaded",
       "media.failed",
       "media.deleted",
+      "media.context_updated",
       "queue.item.enqueued",
       "queue.item.processing",
       "queue.item.sent",
@@ -144,9 +149,9 @@
       "license.tier_changed"
     ],
     "counts": {
-      "all": 32,
+      "all": 33,
       "free": 9,
-      "pro": 23
+      "pro": 24
     }
   },
   "endpoints": [
@@ -204,6 +209,14 @@
       "scope": "read",
       "pro": false,
       "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/accounts/:id/contacts/:contactId",
+      "scope": "send",
+      "pro": true,
+      "proFeature": "agentMemory",
       "deprecated": false
     },
     {
@@ -292,6 +305,14 @@
       "scope": "read",
       "pro": false,
       "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/accounts/:id/media/:mediaId/context",
+      "scope": "send",
+      "pro": true,
+      "proFeature": "agentMemory",
       "deprecated": false
     },
     {
