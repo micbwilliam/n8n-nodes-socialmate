@@ -101,6 +101,9 @@
     "all": [
       "message.received",
       "message.sent",
+      "message.reaction",
+      "poll.vote",
+      "group.participants_updated",
       "account.connected",
       "account.disconnected",
       "account.banned",
@@ -141,9 +144,9 @@
       "license.tier_changed"
     ],
     "counts": {
-      "all": 29,
+      "all": 32,
       "free": 9,
-      "pro": 20
+      "pro": 23
     }
   },
   "endpoints": [
@@ -341,11 +344,35 @@
     },
     {
       "method": "POST",
+      "path": "/v1/accounts/:id/messages/:messageId/reaction",
+      "scope": "send",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
       "path": "/v1/accounts/:id/messages/media",
       "scope": "send",
       "pro": true,
       "proFeature": "apiWriteEnabled",
       "deprecated": true
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/messages/read",
+      "scope": "send",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/accounts/:id/presence",
+      "scope": "send",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
     },
     {
       "method": "POST",

@@ -206,13 +206,17 @@ export class SocialMate implements INodeType {
 
 				// ─── Message ──────────────────────────────────────────────
 				else if (resource === 'message') {
-					if (operation === 'sendText' || operation === 'sendMedia') {
+					// Every operation that produces a chat bubble shares one path: build
+					// the content block, then POST /messages with the shared send options.
+					const CONTENT_OPS = ['sendText', 'sendMedia', 'sendPoll', 'sendLocation', 'sendContact'];
+					if (CONTENT_OPS.includes(operation)) {
 						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
 						const sendOptions = this.getNodeParameter('sendOptions', i, {}) as IDataObject;
 						const body: IDataObject = { chatId, ...sendOptions };
+
 						if (operation === 'sendText') {
 							body.text = this.getNodeParameter('text', i) as string;
-						} else {
+						} else if (operation === 'sendMedia') {
 							const mediaType = this.getNodeParameter('mediaType', i) as string;
 							const mediaSource = this.getNodeParameter('mediaSource', i) as string;
 							const extra = this.getNodeParameter('mediaOptions', i, {}) as IDataObject;
@@ -230,7 +234,34 @@ export class SocialMate implements INodeType {
 								if (meta?.mimeType && !media.mimetype) media.mimetype = meta.mimeType;
 							}
 							body.media = media;
+						} else if (operation === 'sendPoll') {
+							const options = (this.getNodeParameter('pollOptions', i) as string)
+								.split(',')
+								.map((o) => o.trim())
+								.filter((o) => o.length > 0);
+							body.poll = {
+								name: this.getNodeParameter('pollName', i) as string,
+								options,
+								selectableCount: this.getNodeParameter('pollSelectableCount', i, 1) as number,
+							};
+						} else if (operation === 'sendLocation') {
+							const extra = this.getNodeParameter('locationOptions', i, {}) as IDataObject;
+							body.location = {
+								latitude: this.getNodeParameter('latitude', i) as number,
+								longitude: this.getNodeParameter('longitude', i) as number,
+								...extra,
+							};
+						} else {
+							const collection = this.getNodeParameter('contacts', i, {}) as {
+								contact?: Array<{ fullName: string; phone: string; organization?: string }>;
+							};
+							body.contacts = (collection.contact ?? []).map((c) => ({
+								fullName: c.fullName,
+								phone: c.phone,
+								...(c.organization ? { organization: c.organization } : {}),
+							}));
 						}
+
 						try {
 							responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/messages`, body);
 						} catch (err) {
@@ -253,6 +284,35 @@ export class SocialMate implements INodeType {
 								throw err;
 							}
 						}
+					}
+					// Signal lane — no chat bubble, no send budget, no risk impact.
+					// A 429 here means the independent signal limiter, not the message
+					// rate limiter, so it is never a `SocialMateBlockedError`.
+					else if (operation === 'react') {
+						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
+						const messageId = this.getNodeParameter('messageId', i) as string;
+						responseData = await socialmateApiRequest.call(
+							this,
+							'POST',
+							`/v1/accounts/${acc()}/messages/${encodeURIComponent(messageId)}/reaction`,
+							{ chatId, emoji: this.getNodeParameter('emoji', i, '') as string },
+						);
+					} else if (operation === 'markRead') {
+						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
+						const raw = (this.getNodeParameter('messageIds', i, '') as string).trim();
+						const messageIds = raw
+							? raw.split(',').map((m) => m.trim()).filter((m) => m.length > 0)
+							: undefined;
+						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/messages/read`, {
+							chatId,
+							...(messageIds ? { messageIds } : {}),
+						});
+					} else if (operation === 'sendTyping') {
+						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
+						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/presence`, {
+							chatId,
+							state: this.getNodeParameter('presenceState', i) as string,
+						});
 					} else if (operation === 'getAiContext') {
 						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
 						const o = this.getNodeParameter('aiContextOptions', i, {}) as IDataObject;

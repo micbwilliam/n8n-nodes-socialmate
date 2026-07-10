@@ -19,6 +19,9 @@ import { socialmateApiRequest } from '../SocialMate/GenericFunctions';
 export const EVENT_OPTIONS: Array<{ name: string; value: string }> = [
 	{ name: 'Message Received', value: 'message.received' },
 	{ name: 'Message Sent', value: 'message.sent' },
+	{ name: 'Message Reaction (Pro)', value: 'message.reaction' },
+	{ name: 'Poll Vote (Pro)', value: 'poll.vote' },
+	{ name: 'Group Participants Updated (Pro)', value: 'group.participants_updated' },
 	{ name: 'Account Connected', value: 'account.connected' },
 	{ name: 'Account Disconnected', value: 'account.disconnected' },
 	{ name: 'Account Banned (Pro)', value: 'account.banned' },

@@ -76,7 +76,7 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 
 | Resource | Free | Pro |
 |---|---|---|
-| **Message** | Send Text | Send Media · Get AI Context · Search / List history |
+| **Message** | Send Text (with Reply To) · React · Mark Read · Send Typing | Send Media · Send Poll · Send Location · Send Contact · Get AI Context · Search / List history |
 | **Chat** | Get Many | — |
 | **Contact** | Get · Get Many | — |
 | **Group** | Get Many · Get · Get Invite Link | Create · Update Participants · Set Subject · Set Description · Leave |
@@ -141,15 +141,32 @@ walkthrough + the `$fromAI` pattern + 11 use cases in
 [`examples/ai-agent-tool.json`](examples/ai-agent-tool.json) and
 [`examples/mcp-server-trigger.json`](examples/mcp-server-trigger.json).
 
+### Make it behave like a human
+
+A drop-in **System Message** that teaches an agent the human reply cadence — *mark read →
+recall the thread → show typing → react or reply (threaded)* — plus the full tool inventory,
+the tier and anti-ban error contract (`402` / `blocked` / `queueable:false` /
+`signal_rate_limit`), what the agent genuinely **cannot** do (no edit/delete/forward, it can't
+see the contact typing, buttons are deprecated → send a poll), and the consent + honesty rules:
+
+**[docs/AI-AGENT-SYSTEM-PROMPT.md](docs/AI-AGENT-SYSTEM-PROMPT.md)**
+
+`examples/ai-agent-tool.json` ships with it pre-loaded and the tools wired
+(*Mark Read · Show Typing · React · Send Poll · Get Conversation Memory · Check My Limits*).
+Reactions, read receipts and the typing indicator are **free on every tier** and consume no
+send budget — an agent can be human without spending its message allowance.
+
 ## Trigger events
 
-The **SocialMate Trigger** covers all **29 events**. **9 are available on Free** —
+The **SocialMate Trigger** covers all **32 events**. **9 are available on Free** —
 `message.received`, `message.sent`, `account.connected`, `account.disconnected`,
 `tunnel.url_changed`, `tunnel.stopped`, `license.activated`, `license.deactivated`,
-`license.tier_changed`; the other 20 (incl. `tunnel.started` and the High-Volume Mode
+`license.tier_changed`; the other 23 (incl. `tunnel.started`, the conversational events
+`message.reaction` / `poll.vote` / `group.participants_updated`, and the High-Volume Mode
 `account.danger_mode_*` events) require Pro and are labelled `(Pro)` in the picker:
 
-- **Messaging:** `message.received`, `message.sent`
+- **Messaging:** `message.received`, `message.sent`, `message.reaction` (Pro), `poll.vote` (Pro)
+- **Groups:** `group.participants_updated` (Pro) — join, leave, promote, demote
 - **Accounts:** `account.connected`, `account.disconnected`, `account.banned`, `contacts.updated`, `account.danger_mode_enabled`, `account.danger_mode_disabled`
 - **Tunnel:** `tunnel.started`, `tunnel.url_changed`, `tunnel.stopped`
 - **Sync:** `sync.started`, `sync.completed`, `sync.failed`
@@ -269,7 +286,7 @@ Free is capped at **200 sends/day**; Pro starts at **500/day** per account and s
 
 Importable workflows live in [`examples/`](examples/):
 
-- [`ai-agent-tool.json`](examples/ai-agent-tool.json) — **SocialMate as an AI Agent tool**: an AI Agent that calls SocialMate tools (Get AI Context, Look Up Contact) on demand and replies. See [docs/AI-AGENT-TOOL-GUIDE.md](docs/AI-AGENT-TOOL-GUIDE.md).
+- [`ai-agent-tool.json`](examples/ai-agent-tool.json) — **SocialMate as an AI Agent tool**: an AI Agent that marks read, recalls the thread, shows a typing indicator, then reacts or replies (threaded). Ships with the human-cadence system prompt pre-loaded. See [docs/AI-AGENT-SYSTEM-PROMPT.md](docs/AI-AGENT-SYSTEM-PROMPT.md) and [docs/AI-AGENT-TOOL-GUIDE.md](docs/AI-AGENT-TOOL-GUIDE.md).
 - [`mcp-server-trigger.json`](examples/mcp-server-trigger.json) — **WhatsApp MCP server built in n8n**: expose SocialMate to Claude Desktop / Cursor via the MCP Server Trigger.
 - [`real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json) — a WhatsApp AI concierge (Trigger → Get AI Context → DeepSeek → reply).
 - [`auto-reply-trigger.json`](examples/auto-reply-trigger.json) — a minimal Trigger → Send Text auto-reply round-trip.
