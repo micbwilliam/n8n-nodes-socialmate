@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/node/v/n8n-nodes-socialmate.svg" alt="node version" />
 </p>
 
-Official [n8n](https://n8n.io) community node for **[SocialMate](https://socialmate.app)** — the self-hosted WhatsApp automation server. Run it as a desktop app (Windows/macOS/Linux) or headless on your own VPS with Docker; this node talks to either the same way.
+Official [n8n](https://n8n.io) community node for **[SocialMate](https://socialmate.app)** — the self-hosted WhatsApp automation server. Run it as a desktop app (Windows/macOS/Linux) or headless on your own VPS with Docker; this node talks to either the same way. On the desktop it sends from your own residential IP (same network as your phone); on a VPS (a datacenter IP) you can route an account through your own residential/mobile proxy — set it in the app/`/admin` or via `PUT /v1/accounts/:id/proxy` (Pro).
 
 Automate WhatsApp from n8n: send and schedule personalized messages, queue and batch-import to opted-in contacts (an opt-in Pro feature), manage chats, contacts, groups and media, and react to incoming messages and lifecycle events — all through your own SocialMate server.
 
@@ -132,7 +132,7 @@ before replying — a combination no official / Business-API node offers.
 > call the operation from a normal (non-agent) node, or use **MCP** (below), which bypasses it.
 
 **Prefer MCP (Claude Desktop / Cursor / any client)?** SocialMate ships a native **Model Context
-Protocol** server, `socialmate-mcp`, exposing 30 WhatsApp tools (see **API & Integrations → MCP** in
+Protocol** server, `socialmate-mcp`, exposing 38 WhatsApp tools (see **API & Integrations → MCP** in
 the app for the copy-paste config), plus an n8n MCP Server Trigger recipe. One thing to know: MCP is
 request/response with **no inbound push**, so to auto-react to incoming messages you either poll the
 `whatsapp_fetch_new_messages` tool or drive the loop from the **SocialMate Trigger** below. Full
