@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/node/v/n8n-nodes-socialmate.svg" alt="node version" />
 </p>
 
-Official [n8n](https://n8n.io) community node for **[SocialMate](https://socialmate.app)** — the self-hosted desktop WhatsApp automation server.
+Official [n8n](https://n8n.io) community node for **[SocialMate](https://socialmate.app)** — the self-hosted WhatsApp automation server. Run it as a desktop app (Windows/macOS/Linux) or headless on your own VPS with Docker; this node talks to either the same way.
 
 Automate WhatsApp from n8n: send and schedule personalized messages, queue and batch-import to opted-in contacts (an opt-in Pro feature), manage chats, contacts, groups and media, and react to incoming messages and lifecycle events — all through your own SocialMate server.
 
