@@ -15,6 +15,12 @@ export const messageOperations: INodeProperties[] = [
 				description: 'Returns a chat\'s recent history as a role-mapped, token-windowed transcript (the contact = user, your account = assistant) ready to paste into an AI agent\'s prompt or memory. This is the recommended way to give an agent conversation memory before it replies. Returns {transcript, messages, meta}. Use this — not Search — to feed an LLM. Requires Pro.',
 			},
 			{
+				name: 'Get Poll Results',
+				value: 'getPollResults',
+				action: 'Get poll results',
+				description: 'Reads back a poll\'s results by its message ID: every option, how many people picked each, and who voted for what. Use after Send Poll to find out whether it was answered — poll results are not pushed to you (the Trigger node\'s "Poll Vote" event fires per vote; this reads the current standing). Re-voting replaces a person\'s earlier choice, so the counts never double-count, and an option nobody picked is still listed at 0. Requires Pro.',
+			},
+			{
 				name: 'Mark Read',
 				value: 'markRead',
 				action: 'Mark a chat read',
@@ -54,7 +60,7 @@ export const messageOperations: INodeProperties[] = [
 				name: 'Send Poll',
 				value: 'sendPoll',
 				action: 'Send a poll',
-				description: 'Sends a multiple-choice poll (2–12 options) to a chat and returns the poll message ID. Use instead of an open question when you need a structured answer — WhatsApp renders tappable options. Votes arrive later on the Trigger node\'s "Poll Vote" event; only polls sent from this account can have their votes decrypted. Requires Pro.',
+				description: 'Sends a multiple-choice poll (2–12 options) to a chat and returns the poll message ID. Use instead of an open question when you need a structured answer — WhatsApp renders tappable options. Votes arrive on the Trigger node\'s "Poll Vote" event as they are cast; to read the current standing at any time, use Get Poll Results with the returned message ID. Requires Pro.',
 			},
 			{
 				name: 'Send Text',
@@ -304,6 +310,18 @@ export const messageFields: INodeProperties[] = [
 				],
 			},
 		],
+	},
+
+	// ── Get Poll Results ──
+	// No Chat ID: a poll is addressed by its message ID alone.
+	{
+		displayName: 'Message ID',
+		name: 'messageId',
+		type: 'string',
+		default: '',
+		required: true,
+		description: 'The poll message to read results for — the message ID returned by Send Poll (or carried on a Poll Vote trigger event)',
+		displayOptions: { show: { resource: ['message'], operation: ['getPollResults'] } },
 	},
 
 	// ── React ──

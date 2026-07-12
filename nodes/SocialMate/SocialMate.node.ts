@@ -182,7 +182,15 @@ export class SocialMate implements INodeType {
 				else if (resource === 'account') {
 					if (operation === 'getMany') responseData = await socialmateApiRequest.call(this, 'GET', '/v1/accounts');
 					else if (operation === 'get') responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}`);
-					else responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}/antiban`);
+					else if (operation === 'getProxy') responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}/proxy`);
+					else if (operation === 'setProxy') {
+						responseData = await socialmateApiRequest.call(this, 'PUT', `/v1/accounts/${acc()}/proxy`, {
+							url: this.getNodeParameter('proxyUrl', i) as string,
+							enabled: this.getNodeParameter('proxyEnabled', i, true) as boolean,
+						});
+					} else if (operation === 'clearProxy') {
+						responseData = await socialmateApiRequest.call(this, 'DELETE', `/v1/accounts/${acc()}/proxy`);
+					} else responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}/antiban`);
 				}
 
 				// ─── Chat ─────────────────────────────────────────────────
@@ -337,6 +345,13 @@ export class SocialMate implements INodeType {
 						if (o.beforeTs) qs.beforeTs = o.beforeTs;
 						if (o.order) qs.order = o.order;
 						responseData = await socialmateApiRequest.call(this, 'GET', `/v1/accounts/${acc()}/ai-context`, {}, qs);
+					} else if (operation === 'getPollResults') {
+						const messageId = this.getNodeParameter('messageId', i) as string;
+						responseData = await socialmateApiRequest.call(
+							this,
+							'GET',
+							`/v1/accounts/${acc()}/polls/${encodeURIComponent(messageId)}`,
+						);
 					} else {
 						const filters = this.getNodeParameter('searchFilters', i, {}) as IDataObject;
 						const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
