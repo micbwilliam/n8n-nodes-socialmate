@@ -76,13 +76,13 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 
 | Resource | Free | Pro |
 |---|---|---|
-| **Message** | Send Text (with Reply To) · React · Mark Read · Send Typing | Send Media · Send Poll · Send Location · Send Contact · Get AI Context · Search / List history |
+| **Message** | Send Text (with Reply To) · React · Mark Read · Send Typing | Send Media · Send Poll · Get Poll Results · Send Location · Send Contact · Get AI Context · Search / List history |
 | **Chat** | Get Many | — |
 | **Contact** | Get · Get Many | Update (Agent Memory — save a name/notes/tags your agent learned) |
 | **Group** | Get Many · Get · Get Invite Link | Create · Update Participants · Set Subject · Set Description · Leave |
 | **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup · Set Context (Agent Memory — cache an AI description) |
 | **Queue** | Get Status · Get Items · Get Batches | Enqueue · Bulk Import · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
-| **Account** | Get Many · Get · Get Anti-Ban Status | — |
+| **Account** | Get Many · Get · Get Anti-Ban Status | Get Proxy · Set Proxy · Clear Proxy |
 | **Sync** | Get Status | Trigger |
 | **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries | — |
 | **API Key** | Get Many · Create · Rotate · Delete | — |

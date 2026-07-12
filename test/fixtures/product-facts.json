@@ -1,6 +1,6 @@
 {
   "_generated": "GENERATED FILE — do not edit by hand. Run `npm run gen:product-facts` after changing an anchor. Drift-guarded by src/shared/product-facts.test.ts. Map: docs/CROSS-REPO-CONTRACT.md.",
-  "version": "1.0.0-rc.6",
+  "version": "2.0.0-rc.1",
   "tiers": {
     "free": {
       "maxAccounts": 1,
@@ -17,7 +17,8 @@
       "scheduledMessages": false,
       "agentMemory": false,
       "autoStart": false,
-      "autoReconnect": false
+      "autoReconnect": false,
+      "proxyRouting": false
     },
     "pro": {
       "maxAccounts": "unlimited",
@@ -34,7 +35,8 @@
       "scheduledMessages": true,
       "agentMemory": true,
       "autoStart": true,
-      "autoReconnect": true
+      "autoReconnect": true,
+      "proxyRouting": true
     },
     "pro_trial": {
       "maxAccounts": "unlimited",
@@ -51,7 +53,8 @@
       "scheduledMessages": true,
       "agentMemory": true,
       "autoStart": true,
-      "autoReconnect": true
+      "autoReconnect": true,
+      "proxyRouting": true
     },
     "dev": {
       "maxAccounts": "unlimited",
@@ -68,7 +71,8 @@
       "scheduledMessages": true,
       "agentMemory": true,
       "autoStart": true,
-      "autoReconnect": true
+      "autoReconnect": true,
+      "proxyRouting": true
     }
   },
   "rateLimits": {
@@ -388,11 +392,43 @@
       "deprecated": false
     },
     {
+      "method": "GET",
+      "path": "/v1/accounts/:id/polls/:messageId",
+      "scope": "read",
+      "pro": true,
+      "proFeature": "localMessageCache",
+      "deprecated": false
+    },
+    {
       "method": "POST",
       "path": "/v1/accounts/:id/presence",
       "scope": "send",
       "pro": false,
       "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/accounts/:id/proxy",
+      "scope": "send",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/accounts/:id/proxy",
+      "scope": "read",
+      "pro": false,
+      "proFeature": null,
+      "deprecated": false
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/accounts/:id/proxy",
+      "scope": "send",
+      "pro": true,
+      "proFeature": "proxyRouting",
       "deprecated": false
     },
     {
@@ -642,5 +678,26 @@
       "free": false,
       "pro": true
     }
+  },
+  "deployment": {
+    "desktop": [
+      "windows",
+      "macos",
+      "linux"
+    ],
+    "server": [
+      "docker",
+      "linux-systemd"
+    ],
+    "installTypes": [
+      "desktop",
+      "docker",
+      "vps"
+    ],
+    "adminConsole": true,
+    "adminConsoleTier": "all",
+    "serverUpdates": "image-or-package-pull",
+    "perAccountProxy": true,
+    "perAccountProxyTier": "pro"
   }
 }
