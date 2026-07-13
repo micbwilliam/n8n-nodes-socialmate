@@ -19,6 +19,15 @@ import { socialmateApiRequest } from '../SocialMate/GenericFunctions';
 export const EVENT_OPTIONS: Array<{ name: string; value: string }> = [
 	{ name: 'Message Received', value: 'message.received' },
 	{ name: 'Message Sent', value: 'message.sent' },
+	// Delivery receipts. "Message Sent" only means SocialMate handed it to
+	// WhatsApp — these are how a notification workflow (an order confirmation, a
+	// shipping update) learns it actually landed, and whether it was opened.
+	// Correlate on `messageId`. Fired only on a forward transition, so WhatsApp's
+	// liberal ack re-sends cannot deliver the same event twice.
+	// Note: a contact who has read receipts switched off never produces
+	// "Message Read" — absence is not proof it went unread.
+	{ name: 'Message Delivered (Pro)', value: 'message.delivered' },
+	{ name: 'Message Read (Pro)', value: 'message.read' },
 	{ name: 'Message Reaction (Pro)', value: 'message.reaction' },
 	{ name: 'Poll Vote (Pro)', value: 'poll.vote' },
 	{ name: 'Group Participants Updated (Pro)', value: 'group.participants_updated' },

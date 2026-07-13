@@ -57,3 +57,35 @@ describe('normalizeBaseUrl', () => {
 		expect(normalizeBaseUrl(undefined)).toBe('');
 	});
 });
+
+// ── The national-number trap (mirrors SM4's assertSendableRecipient) ────────
+// Regression: "01281839243" (how an Egyptian writes their own number) used to be
+// passed straight through with its trunk prefix, producing a malformed recipient
+// that WhatsApp accepts and then silently drops. E.164 numbers never begin with 0.
+// SM4 and this node MUST agree on which recipients are sendable, or a workflow
+// succeeds here and dies in the app.
+describe('normalizeChatId — national numbers', () => {
+	it('refuses a national number with a trunk prefix, and says how to fix it', () => {
+		for (const national of ['01281839243', '0128 183 9243', '07700900123']) {
+			expect(() => normalizeChatId(national)).toThrow(/national number/i);
+			expect(() => normalizeChatId(national)).toThrow(/country code/i);
+		}
+	});
+
+	it('never returns a recipient that starts with 0', () => {
+		for (const ok of ['+201281839243', '201281839243', '00201281839243', '+20 128 183 9243']) {
+			expect(normalizeChatId(ok).startsWith('0')).toBe(false);
+		}
+	});
+
+	it('accepts the same number once it carries its country code', () => {
+		for (const ok of ['+201281839243', '201281839243', '+20 128 183 9243', '00201281839243']) {
+			expect(normalizeChatId(ok)).toBe('201281839243');
+		}
+	});
+
+	it('still passes JIDs and group ids through untouched', () => {
+		expect(normalizeChatId('201281839243@s.whatsapp.net')).toBe('201281839243@s.whatsapp.net');
+		expect(normalizeChatId('120363042000000000-1609459200')).toBe('120363042000000000-1609459200');
+	});
+});

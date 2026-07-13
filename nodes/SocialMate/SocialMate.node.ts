@@ -63,7 +63,7 @@ export class SocialMate implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description:
-			'Control WhatsApp from n8n or an AI agent: send & read messages, look up contacts, manage groups, download media, queue campaigns, and fetch conversation memory (Get AI Context) — all through your self-hosted SocialMate server.',
+			'Control WhatsApp from n8n or an AI agent: send & read messages, look up contacts, manage groups, download media, queue paced batches of personalised messages, and fetch conversation memory (Get AI Context) — all through your self-hosted SocialMate server.',
 		// Expose every operation to n8n AI Agents as callable tools. The agent
 		// reads each operation/parameter description to decide what to call, so
 		// keep those descriptions action-oriented. NOTE: the n8n instance must

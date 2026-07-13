@@ -85,7 +85,7 @@ operations**, **29 trigger events**.
 | **Contact** | Get · Get Many (search) · Update (Agent Memory) | Reads Free; Update (enrichment) Pro |
 | **Group** | Get Many · Get · Get Invite Link · Create · Update Participants (add/remove/promote/demote) · Set Subject · Set Description · Leave | Reads Free; writes Pro |
 | **Media** | Get Many (incl. hasContext filter) · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue · Force Download · Delete · Run Cleanup · Set Context (Agent Memory) | Reads Free; writes/cleanup/context Pro |
-| **Queue** (smart scheduling) | Enqueue · Bulk Import (mustache templating) · Get Status · Get Items · Get Batches · Cancel/Retry Item · Cancel/Retry Batch · Pause · Resume | Reads Free; writes Pro |
+| **Queue** (smart scheduling) | Enqueue · Queue a Batch (mustache templating — one personalised message per row) · Get Status · Get Items · Get Batches · Cancel/Retry Item · Cancel/Retry Batch · Pause · Resume | Reads Free; writes Pro |
 | **Account** | Get Many · Get · Get Anti-Ban Status | Free |
 | **Sync** | Trigger · Get Status | Trigger Pro; status Free |
 | **Webhook** | Full CRUD + Test + Deliveries | Free (Free delivery-capped) |
@@ -93,9 +93,10 @@ operations**, **29 trigger events**.
 | **System** | Capabilities · Status · Version · Network Status | Free |
 | **Trigger** | 29 webhook events (message.received/sent, account.\*, contacts.updated, tunnel.\*, sync.\*, media.\*, queue.\*, license.\*), HMAC-verified | 9 Free / 20 Pro |
 
-**Where the node already _beats_ the competition:** a first-class **scheduling/queue engine** (bulk
-import + pause/resume/retry), a **media archive**, an **AI-context (conversation memory) endpoint**,
-and **anti-ban status** — none of WAHA / Evolution / the official node expose equivalents.
+**Where the node already _beats_ the competition:** a first-class **scheduling/queue engine**
+(paced, personalised batches + pause/resume/retry), a **media archive**, an **AI-context
+(conversation memory) endpoint**, and **anti-ban status** — none of WAHA / Evolution / the official
+node expose equivalents.
 
 ---
 
@@ -139,13 +140,31 @@ page and never re-fetched. Covered by `test/integration/request.test.ts`.
 4. **Order / shipping / payment notifications.**
 5. **Appointment booking & reminders** (Cal.com/Calendar).
 6. **Voice-note → transcription → AI reply** (multimodal).
-7. **Broadcast / bulk campaigns** ← _our queue + bulk-import sweet spot._
+7. **Broadcast / bulk campaigns** ← _demand exists; we deliberately **do not** serve it._ See §5.1a.
 8. **Support ticketing / omnichannel** (Chatwoot/Asana).
 9. **RAG knowledge-base bot** (vector DB).
 10. **Abandoned-cart recovery.**
 11. Message archiving/logging · 12. Drip/nurture sequences · 13. Internal team alerts · 14.
 Surveys/feedback/NPS · 15. OTP/verification · 16. Birthday/loyalty · 17. Group/community management ·
 18. Review requests.
+
+### 5.1a The one demand we refuse — and the adjacent job we own
+
+Item **7** is real market demand, and we are deliberately **not** the tool for it. SocialMate's own
+legal copy (`src/shared/legal-copy.ts`) says the product is for *"managing your own conversations —
+not a bulk-messaging, broadcast, or spam platform"*, and the code backs that up: batch sending is
+**off by default**, identical content to many contacts is **blocked by the duplicate guard**, and
+every item is still metered by the anti-ban pipeline. A blast tool is not something we are failing
+to build — it is something we decline to build. Positioning the queue as a "broadcast/campaign
+engine" would contradict the licence the user accepts on first run, so we do not.
+
+**The adjacent job we do own, and lead on:** *paced, personalised notices to people who are already
+waiting on you.* They ordered, they booked, they asked — and now an order is late or a pickup time
+moved, and they each need to hear it. **Queue a Batch** sends **one individual, personalised message
+per person**, paced by the anti-ban engine, to contacts who messaged first or explicitly opted in.
+That is a categorically different product from a broadcast, it is what customers actually need, and
+no competitor paces it safely. We compete on **safety, pacing and personalisation — never on blast
+volume.**
 
 ### 5.2 Capability → gap flags
 
@@ -155,7 +174,7 @@ Surveys/feedback/NPS · 15. OTP/verification · 16. Birthday/loyalty · 17. Grou
 | Send text / image / doc | nearly all | ✅ | covered |
 | History / AI-context | 1,2,9,11 | ✅ | **differentiator** |
 | Group management | 13,17 | ✅ | **we lead** |
-| Scheduled / bulk queue | 7,12,15,16 | ✅ | **we lead** |
+| Scheduled / batch queue (paced, **personalised**) | 12,15,16 + the consented slice of 7 (see §5.1a) | ✅ | **we lead** |
 | **`usableAsTool`** | 1,2,5,9 | ✅ **(shipped this release)** | was the #1 gap |
 | **Reply / quoted** | 2,8,13,14,17 | ❌ | 🟠 high — expected UX |
 | **Typing + mark-read** | 1,2,8 | ❌ | 🟠 high — table stakes |

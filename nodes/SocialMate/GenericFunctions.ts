@@ -315,6 +315,29 @@ export function normalizeChatId(input: string): string {
 	if (/^\d{12,}-\d+$/.test(value)) return value; // bare legacy group id — keep hyphen
 	let digits = value.replace(/[^\d]/g, ''); // E.164 digits only for 1:1 chats
 	if (digits.startsWith('00')) digits = digits.slice(2); // 00 == leading '+'
+
+	// A number that STILL begins with '0' is a NATIONAL number carrying a trunk
+	// prefix, not an E.164 number: "01281839243" is how an Egyptian writes
+	// +20 1281839243, and how a Brit writes +44 …. E.164 numbers never begin with
+	// 0, so the JID built from it is always wrong — WhatsApp accepts it and the
+	// message goes nowhere, silently.
+	//
+	// We must NOT guess the country: the same trunk prefix belongs to Egypt, the
+	// UK, Germany and dozens more, so a wrong guess delivers a real message to a
+	// different real person abroad. Fail with something the user can act on.
+	//
+	// MUST stay mirrored with SM4's `assertSendableRecipient`
+	// (src/shared/formatting.ts) — the app and this node have to agree on exactly
+	// which recipients are sendable, or a workflow succeeds here and dies there.
+	if (digits.startsWith('0')) {
+		throw new Error(
+			`"${value}" looks like a national number: it starts with a trunk prefix (0) and carries no country code. ` +
+				`WhatsApp needs the full international number — drop the leading 0 and add the country code ` +
+				`(e.g. 01281839243 in Egypt is +20 1281839243).`,
+		);
+	}
+	if (!digits) throw new Error(`"${value}" is not a WhatsApp recipient. Use a full international phone number (e.g. +20 1281839243) or a group id.`);
+
 	return digits;
 }
 

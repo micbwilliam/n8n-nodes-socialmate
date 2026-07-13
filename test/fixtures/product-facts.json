@@ -109,6 +109,8 @@
     "all": [
       "message.received",
       "message.sent",
+      "message.delivered",
+      "message.read",
       "message.reaction",
       "poll.vote",
       "group.participants_updated",
@@ -153,9 +155,9 @@
       "license.tier_changed"
     ],
     "counts": {
-      "all": 33,
+      "all": 35,
       "free": 9,
-      "pro": 24
+      "pro": 26
     }
   },
   "endpoints": [

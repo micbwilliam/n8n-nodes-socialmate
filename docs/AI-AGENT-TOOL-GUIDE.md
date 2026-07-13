@@ -2,8 +2,8 @@
 
 **SocialMate is the WhatsApp "hands and memory" your AI agent uses.** Attach it to an n8n **AI
 Agent** (or any **MCP** client like Claude Desktop or Cursor) and the model can send and read
-WhatsApp messages, look up contacts, manage groups, download media, queue campaigns, and recall a
-whole conversation — deciding on its own which action to take.
+WhatsApp messages, look up contacts, manage groups, download media, queue a paced batch of
+personalised messages, and recall a whole conversation — deciding on its own which action to take.
 
 > SocialMate doesn't *contain* an AI. It gives your AI (Claude, GPT, Gemini, any LLM) a safe,
 > self-hosted WhatsApp it can operate. Every action still passes SocialMate's anti-ban engine.
@@ -142,7 +142,8 @@ Claude Desktop with `npx mcp-remote <SSE_URL> --header "Authorization: Bearer <t
 | See all conversations | Chat → Get Many | Free |
 | Create / manage a group | Group → Create / Update Participants / … | Pro |
 | Read a shared file | Media → Download File | Free |
-| Schedule / bulk-send a campaign | Queue → Enqueue / Bulk Import | Pro |
+| Schedule one message for later | Queue → **Enqueue** | Pro |
+| Tell several waiting customers the same news, one personalised message each | Queue → **Queue a Batch** | Pro |
 | Check anti-ban headroom before a burst | Account → Get Anti-Ban Status | Free |
 
 **Get AI Context is the standout** — one call returns a whole thread, role-mapped
@@ -161,7 +162,7 @@ node. No competitor exposes an equivalent.
 6. **Appointment reminders** — validates slots to avoid double-booking, sends timed nudges.
 7. **Human-in-the-loop approvals** — the agent pings *you* on WhatsApp for a yes/no before acting.
 8. **Group community manager** — reads group history, summarizes, answers in the group.
-9. **Broadcast/queue campaign agent** — drafts and schedules rate-limited outreach to many contacts.
+9. **Customer-notice agent** — something changed (an order is late, a pickup time moved) and the people who already ordered need to know: drafts **one personalised message each**, queues them, and lets the anti-ban engine pace them. Opted-in contacts and open orders only — never a bought or scraped list. SocialMate is not a broadcast tool, and identical text to many contacts is blocked by the duplicate guard.
 10. **Multimodal intake** — reads incoming invoices/IDs (PDF/image), extracts fields, routes them.
 11. **Multi-tool orchestrator** — one agent uses WhatsApp + CRM + Calendar + a knowledge base end to end.
 

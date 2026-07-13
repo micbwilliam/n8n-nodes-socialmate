@@ -81,7 +81,7 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 | **Contact** | Get · Get Many | Update (Agent Memory — save a name/notes/tags your agent learned) |
 | **Group** | Get Many · Get · Get Invite Link | Create · Update Participants · Set Subject · Set Description · Leave |
 | **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup · Set Context (Agent Memory — cache an AI description) |
-| **Queue** | Get Status · Get Items · Get Batches | Enqueue · Bulk Import · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
+| **Queue** | Get Status · Get Items · Get Batches | Enqueue · Queue a Batch · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
 | **Account** | Get Many · Get · Get Anti-Ban Status | Get Proxy · Set Proxy · Clear Proxy |
 | **Sync** | Get Status | Trigger |
 | **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries | — |
@@ -158,7 +158,7 @@ send budget — an agent can be human without spending its message allowance.
 
 ## Trigger events
 
-The **SocialMate Trigger** covers all **33 events**. **9 are available on Free** —
+The **SocialMate Trigger** covers all **35 events**. **9 are available on Free** —
 `message.received`, `message.sent`, `account.connected`, `account.disconnected`,
 `tunnel.url_changed`, `tunnel.stopped`, `license.activated`, `license.deactivated`,
 `license.tier_changed`; the other 24 (incl. `tunnel.started`, the conversational events
@@ -225,7 +225,12 @@ API shapes (handy when mapping fields). Responses are wrapped in the `{ "data": 
 { "data": { "account": { "id": "acct_1", "name": "Sales" }, "chat": { "id": "15551234567", "name": "Jane" }, "messages": [ { "role": "user", "content": "Hi" } ], "transcript": "Jane: Hi", "tokenEstimate": 8 } }
 ```
 
-**Queue → Bulk Import** (Pro; opt-in, off by default) — when to use: queue one batch of templated, *personalized* messages (e.g. reminders/notifications) to contacts who opted in — up to 5000 rows:
+**Queue → Queue a Batch** (Pro; opt-in, off by default) — when several people who are **already
+waiting on you** need the same news (an order delay, a new pickup time), queue **one individual,
+personalised message each** and let the anti-ban engine pace them — up to 5000 rows. Only for people
+who contacted you or explicitly opted in; never a list you bought, scraped or guessed. This is not a
+broadcast: identical text to many contacts is blocked by the duplicate guard, so personalise every
+row.
 
 ```json
 {
@@ -277,7 +282,7 @@ A **Send Text / Send Media** call resolves one of these ways. The first three ar
 
 Free covers text send, reads (chats/contacts/accounts/media), live webhooks, and
 webhook/API-key management — one account. Pro adds media send, group management,
-scheduling and opt-in bulk import, message history/search, sync, the smart queue, unlimited accounts
+scheduling and opt-in batch sending, message history/search, sync, the smart queue, unlimited accounts
 and a stable named tunnel.
 
 Free is capped at **200 sends/day**; Pro starts at **500/day** per account and scales to
@@ -291,7 +296,7 @@ Importable workflows live in [`examples/`](examples/):
 - [`mcp-server-trigger.json`](examples/mcp-server-trigger.json) — **WhatsApp MCP server built in n8n**: expose SocialMate to Claude Desktop / Cursor via the MCP Server Trigger.
 - [`real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json) — a WhatsApp AI concierge (Trigger → Get AI Context → DeepSeek → reply).
 - [`auto-reply-trigger.json`](examples/auto-reply-trigger.json) — a minimal Trigger → Send Text auto-reply round-trip.
-- [`scheduled-bulk-send.json`](examples/scheduled-bulk-send.json) — schedule a daily batch of queued, personalized reminders to opted-in contacts via the smart queue (Pro).
+- [`scheduled-bulk-send.json`](examples/scheduled-bulk-send.json) — schedule a daily batch of queued, *personalised* reminders to opted-in contacts via the smart queue (Pro). One individual message per person, paced by the anti-ban engine — not a broadcast.
 - [`keyword-router.json`](examples/keyword-router.json) — Trigger → IF on the message text → route to different replies (extend with more branches).
 - [`drip-onboarding-sequence.json`](examples/drip-onboarding-sequence.json) — Trigger → three scheduled Queue Enqueues that drip a welcome sequence over a few days (Pro).
 - [`order-confirmation-webhook.json`](examples/order-confirmation-webhook.json) — your store's order webhook → Send Text order confirmation.

@@ -66,7 +66,7 @@ export const messageOperations: INodeProperties[] = [
 				name: 'Send Text',
 				value: 'sendText',
 				action: 'Send a text message',
-				description: 'Sends a plain-text WhatsApp message to one chat (a phone number or a group JID). Returns the message ID and delivery status. This is the primary way an agent replies to or notifies someone. Set Reply To Message ID to quote a message. For files use Send Media; for many recipients use Queue: Bulk Import. Available on every tier.',
+				description: 'Sends a plain-text WhatsApp message to one chat (a phone number or a group JID). Returns the message ID and delivery status. This is the primary way an agent replies to or notifies someone. Set Reply To Message ID to quote a message. For files use Send Media. Never loop this over a list of recipients — that is the pattern that gets numbers banned; when several people who are already waiting on you need the same news, use Queue: Queue a Batch. Available on every tier.',
 			},
 			{
 				name: 'Send Typing',

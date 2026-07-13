@@ -1,6 +1,6 @@
 {
   "id": "socialmateScheduledBulk1",
-  "name": "Scheduled Reminders (Schedule → SocialMate Queue Import)",
+  "name": "Scheduled Reminders (Schedule → SocialMate Queue a Batch)",
   "nodes": [
     {
       "parameters": {
@@ -27,14 +27,14 @@
         }
       },
       "id": "b2222222-2222-4222-8222-222222222222",
-      "name": "Queue Bulk Import",
+      "name": "Queue a Batch",
       "type": "n8n-nodes-socialmate.socialMate",
       "typeVersion": 1,
       "position": [260, 300]
     },
     {
       "parameters": {
-        "content": "## Scheduled Batch of Reminders (Pro)\n\n**Flow:** a daily **Schedule Trigger** → **Queue Bulk Import** drops a batch into SocialMate's smart queue, which paces every send through the anti-ban engine and auto-retries any that get rate-limited.\n\n**Setup:**\n1. Create a **SocialMate API** credential and set **Account** in *Queue Bulk Import* (replace `YOUR_ACCOUNT_ID`, or it auto-resolves when the key is bound to one account).\n2. Replace the **Template** and **Rows** — usually you'd map `rows` from a Google Sheets / database node above instead of the hard-coded array.\n3. **Save & Activate.**\n\nBulk Import + scheduling are **Pro** features (Bulk Import is opt-in and **off by default** — enable it with consent in the app first). Only message contacts who expect to hear from you.",
+        "content": "## Scheduled Batch of Reminders (Pro)\n\n**Flow:** a daily **Schedule Trigger** → **Queue a Batch** drops one batch into SocialMate's smart queue. Each row becomes **one individual, personalised message**, paced through the anti-ban engine and auto-retried if it gets rate-limited.\n\n**Setup:**\n1. Create a **SocialMate API** credential and set **Account** in *Queue a Batch* (replace `YOUR_ACCOUNT_ID`, or it auto-resolves when the key is bound to one account).\n2. Replace the **Template** and **Rows** — usually you'd map `rows` from a Google Sheets / database node above instead of the hard-coded array. Personalise every row.\n3. **Save & Activate.**\n\nBatch sending + scheduling are **Pro** features (batch sending is opt-in and **off by default** — switch it on with consent in the app first).\n\n**Only for people who are already waiting on you** — they ordered, they booked, they asked. Never a list you bought, scraped or guessed. This is not a broadcast: identical text to many contacts is blocked by the duplicate guard.",
         "height": 300,
         "width": 440
       },
@@ -47,7 +47,7 @@
   ],
   "connections": {
     "Every day at 09:00": {
-      "main": [[{ "node": "Queue Bulk Import", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Queue a Batch", "type": "main", "index": 0 }]]
     }
   },
   "settings": {

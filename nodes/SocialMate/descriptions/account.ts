@@ -15,14 +15,14 @@ export const accountOperations: INodeProperties[] = [
 				action: 'Clear the account proxy',
 				description: 'Removes the account\'s outbound proxy, so it connects directly from the host\'s own IP. Applies on the account\'s next connect. Requires Pro.',
 			},
-			{ name: 'Get', value: 'get', action: 'Get an account', description: 'Gets one WhatsApp account with its live connection state (connected/disconnected). Use to check an account is online before sending.' },
+			{ name: 'Get', value: 'get', action: 'Get an account', description: 'Gets one WhatsApp account by its ID. Returns its phone, name, daily limit and live connection state (connected/disconnected). Use to confirm the number is online before sending. It carries no risk, warming or usage figures — for those use Get Anti-Ban Status; to discover account IDs in the first place, use Get Many.' },
 			{
 				name: 'Get Anti-Ban Status',
 				value: 'getAntiBan',
 				action: 'Get anti ban status',
 				description: 'Returns the account\'s real-time anti-ban status: rate-limit headroom, warming phase, pause state and risk score. Call before a burst of sends to see how much room is left before the number is throttled or cooled.',
 			},
-			{ name: 'Get Many', value: 'getMany', action: 'Get many accounts', description: 'Lists every WhatsApp account this API key can use, with live risk, warming and daily-count stats. Returns each account\'s ID to pass to account-scoped operations.' },
+			{ name: 'Get Many', value: 'getMany', action: 'Get many accounts', description: 'Lists every WhatsApp account this API key can use. Returns each account\'s ID, phone, name, connection status, risk level and score, warming day, messages sent today and daily limit — the ID is what every account-scoped operation takes. Start here to discover which number to send from; for one account\'s live headroom before a burst, use Get Anti-Ban Status.' },
 			{
 				name: 'Get Proxy',
 				value: 'getProxy',

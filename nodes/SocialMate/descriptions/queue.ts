@@ -8,17 +8,17 @@ export const queueOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['queue'] } },
 		options: [
-			{ name: 'Bulk Import', value: 'import', action: 'Bulk import messages', description: 'Creates a batch of personalized messages from a template + rows (e.g. from a spreadsheet), sent safely over time by the anti-ban engine. Returns the batch ID. Opt-in Pro feature — off by default; enable it with consent in the app first (returns 403 until then).' },
-			{ name: 'Cancel Batch', value: 'cancelBatch', action: 'Cancel a batch', description: 'Cancels all still-pending items in an import batch. Requires Pro.' },
-			{ name: 'Cancel Item', value: 'cancelItem', action: 'Cancel an item', description: 'Cancels one pending or processing queued message by its item ID. Requires Pro.' },
+			{ name: 'Cancel Batch', value: 'cancelBatch', action: 'Cancel a batch', description: 'Cancels every still-pending item in a queued batch, so nothing more goes out from it. Returns how many items were cancelled. Already-sent messages are unaffected and cannot be recalled. Use to abandon a batch for good; to stop it only temporarily, use Pause. Requires Pro.' },
+			{ name: 'Cancel Item', value: 'cancelItem', action: 'Cancel an item', description: 'Cancels one pending queued message by its item ID (from Enqueue or Get Items), so it is never sent. Returns the item with status "cancelled". Use to withdraw a single scheduled send; for a whole batch use Cancel Batch, and to hold everything without dropping it use Pause. Requires Pro.' },
 			{ name: 'Enqueue Message', value: 'enqueue', action: 'Enqueue a message', description: 'Queues one text message to send later, optionally at a scheduled time — the anti-ban engine drains it safely. Returns the queued item ID. Use for reminders, follow-ups and scheduled sends; for an immediate reply use Message: Send Text. Requires Pro.' },
-			{ name: 'Get Batches', value: 'getBatches', action: 'Get batches', description: 'Lists bulk-import batches with their progress. Returns each batch\'s ID, name and sent/failed totals.' },
+			{ name: 'Get Batches', value: 'getBatches', action: 'Get batches', description: 'Lists queued batches with their progress. Returns each batch\'s ID, name and sent/failed totals.' },
 			{ name: 'Get Items', value: 'getItems', action: 'Get queue items', description: 'Lists queued messages, optionally filtered by batch, status or search. Returns each item\'s ID, chat, status and scheduled time.' },
-			{ name: 'Get Status', value: 'getStatus', action: 'Get queue status', description: 'Returns global queue counters (pending/processing/failed) and the per-account paused flags' },
+			{ name: 'Get Status', value: 'getStatus', action: 'Get queue status', description: 'Returns queue counters only — server-wide totals (pending, processing, sent, failed) plus each account\'s pending count and paused flag. Use to check whether the queue is draining or paused. It does not list the messages themselves — use Get Items for those, or Account: Get Anti-Ban Status for send headroom. Available on every tier.' },
 			{ name: 'Pause', value: 'pause', action: 'Pause the queue', description: 'Pauses queue processing for this account or globally. Requires Pro.' },
+			{ name: 'Queue a Batch', value: 'import', action: 'Queue a batch of personalised messages', description: 'Creates one batch from a template + rows (e.g. from a spreadsheet): one individual, personalised message per person, each paced by the anti-ban engine. Returns the batch ID. Use it when several people who are already waiting on you need the same news — an order delay, a new pickup time. Only for people who contacted you or explicitly opted in; never a list you bought, scraped or guessed. This is not a broadcast: identical text to many contacts is blocked by the duplicate guard, so personalise every row. Never loop Message: Send Text over a list instead — that is the pattern that gets numbers banned. Off by default: switch on batch sending with consent in the app first (returns 403 until then). Requires Pro.' },
 			{ name: 'Resume', value: 'resume', action: 'Resume the queue', description: 'Resumes queue processing for this account or globally. Requires Pro.' },
-			{ name: 'Retry Batch', value: 'retryBatch', action: 'Retry a batch', description: 'Re-queues all failed items in a batch. Requires Pro.' },
-			{ name: 'Retry Item', value: 'retryItem', action: 'Retry an item', description: 'Resets one failed queued message back to pending by its item ID. Requires Pro.' },
+			{ name: 'Retry Batch', value: 'retryBatch', action: 'Retry a batch', description: 'Re-queues every failed item in a batch so the anti-ban engine attempts them again. Returns how many were reset. Only failed items are touched — sent messages are never re-sent, and cancelled ones stay cancelled. Requires Pro.' },
+			{ name: 'Retry Item', value: 'retryItem', action: 'Retry an item', description: 'Resets one failed queued message back to pending by its item ID, so it is attempted again. Returns the item with status "pending". Use once the cause of the failure is fixed; to reset every failure in a batch at once, use Retry Batch. Requires Pro.' },
 		],
 		default: 'enqueue',
 	},
@@ -73,7 +73,7 @@ export const queueFields: INodeProperties[] = [
 		],
 	},
 
-	// ── Bulk import ──
+	// ── Queue a Batch (the wire operation value stays `import` — internal key) ──
 	{
 		displayName: 'Template',
 		name: 'template',
@@ -91,7 +91,7 @@ export const queueFields: INodeProperties[] = [
 		type: 'json',
 		default: '[\n  { "chatId": "15551234567", "fields": { "name": "Alice", "orderId": "A-1" } }\n]',
 		required: true,
-		description: 'Array of rows. Each row needs a chatId and a fields object matching the template placeholders. Map an incoming items array here with an expression.',
+		description: 'Array of rows — one per person, each getting their own personalised message. Each row needs a chatId and a fields object matching the template placeholders. Map an incoming items array here with an expression. Only include people who contacted you or explicitly opted in.',
 		displayOptions: { show: { resource: ['queue'], operation: ['import'] } },
 	},
 	{

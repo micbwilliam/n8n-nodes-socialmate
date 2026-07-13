@@ -117,8 +117,8 @@ describe('Webhook event drift vs the app', () => {
 	const nodeAll = EVENT_OPTIONS.map((e) => e.value);
 	const nodeFree = EVENT_OPTIONS.filter((e) => !e.name.includes('(Pro)')).map((e) => e.value);
 
-	it('exposes exactly the app\'s 33 events', () => {
-		expect(nodeAll.length).toBe(33);
+	it('exposes exactly the app\'s 35 events', () => {
+		expect(nodeAll.length).toBe(35);
 		expect([...nodeAll].sort()).toEqual([...facts.webhookEvents.all].sort());
 	});
 
