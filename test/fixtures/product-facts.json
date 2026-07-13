@@ -1,6 +1,6 @@
 {
   "_generated": "GENERATED FILE — do not edit by hand. Run `npm run gen:product-facts` after changing an anchor. Drift-guarded by src/shared/product-facts.test.ts. Map: docs/CROSS-REPO-CONTRACT.md.",
-  "version": "2.0.0-rc.1",
+  "version": "2.0.0",
   "tiers": {
     "free": {
       "maxAccounts": 1,
