@@ -12,7 +12,7 @@ export const messageOperations: INodeProperties[] = [
 				name: 'Get AI Context',
 				value: 'getAiContext',
 				action: 'Get AI conversation context',
-				description: 'Returns a chat\'s recent history as a role-mapped, token-windowed transcript (the contact = user, your account = assistant) ready to paste into an AI agent\'s prompt or memory. This is the recommended way to give an agent conversation memory before it replies. Returns {transcript, messages, meta}. Use this — not Search — to feed an LLM. Requires Pro.',
+				description: 'Returns a chat\'s recent history as a role-mapped, token-windowed transcript (the contact = user, your account = assistant) ready to paste into an AI agent\'s prompt or memory. This is the recommended way to give an agent conversation memory before it replies. Returns {account, chat, transcript, messages, meta}, where each entry in messages is a conversation turn — {role, name, content, ts, type} plus, where they exist, reactions, a poll tally, and the cached description of any media. Those turns are conversation, not delivery records: they carry no status field, so to check whether a message was actually delivered or read, use Search / List, whose rows do carry status. Use this — not Search — to feed an LLM. Requires Pro.',
 			},
 			{
 				name: 'Get Poll Results',
@@ -36,19 +36,19 @@ export const messageOperations: INodeProperties[] = [
 				name: 'Search / List',
 				value: 'search',
 				action: 'Search or list messages',
-				description: 'Reads raw persisted message rows for a chat, optionally full-text searched. Returns message records (ID, sender, body, timestamp). Use to find or count specific messages; to give an AI agent conversation memory, use Get AI Context instead. Requires Pro.',
+				description: 'Reads raw persisted message rows for a chat, optionally full-text searched. Returns {data, pagination}, where each row carries its ID plus chatId, senderId, senderName, body, type, timestamp, fromMe, replyTo, any reactions, and status — "pending", "sent", "delivered" or "read". That status field is the only way to find out whether a message you sent actually landed: re-read a message here to see it advance to "delivered" or "read". Use this to find, count or verify specific messages; to give an AI agent conversation memory before it replies, use Get AI Context instead — it returns a role-mapped transcript rather than raw rows. Requires Pro.',
 			},
 			{
 				name: 'Send Contact',
 				value: 'sendContact',
 				action: 'Send a contact card',
-				description: 'Sends one or more contact cards (vCards) to a chat, so the recipient can tap to save or message them. Use to hand a lead to a colleague or share a support number. Returns the message ID. Requires Pro.',
+				description: 'Sends one or more contact cards (vCards) to a chat, so the recipient can tap to save or message them. Use to hand a lead to a colleague or share a support number. Returns {sent: true, messageId, chatId, type, timestamp, status} — status is "sent" once WhatsApp accepts it, and advances to "delivered" / "read" asynchronously, which you read back later with Search / List. Unlike Send Text, a contact card cannot be auto-queued when the anti-ban limiter blocks it: the send is refused with a retry-after rather than held, so retry it later. Requires Pro.',
 			},
 			{
 				name: 'Send Location',
 				value: 'sendLocation',
 				action: 'Send a location',
-				description: 'Sends a location pin (latitude/longitude, with an optional place name and address) to a chat. Use for directions, meeting points or delivery addresses — the recipient can tap it to open maps. Returns the message ID. Requires Pro.',
+				description: 'Sends a location pin (latitude/longitude, with an optional place name and address) to a chat. Use for directions, meeting points or delivery addresses — the recipient can tap it to open maps. Returns {sent: true, messageId, chatId, type, timestamp, status} — status is "sent" once WhatsApp accepts it, and advances to "delivered" / "read" asynchronously, which you read back later with Search / List. Unlike Send Text, a location cannot be auto-queued when the anti-ban limiter blocks it: the send is refused with a retry-after rather than held, so retry it later. Requires Pro.',
 			},
 			{
 				name: 'Send Media',
@@ -60,7 +60,7 @@ export const messageOperations: INodeProperties[] = [
 				name: 'Send Poll',
 				value: 'sendPoll',
 				action: 'Send a poll',
-				description: 'Sends a multiple-choice poll (2–12 options) to a chat and returns the poll message ID. Use instead of an open question when you need a structured answer — WhatsApp renders tappable options. Votes arrive on the Trigger node\'s "Poll Vote" event as they are cast; to read the current standing at any time, use Get Poll Results with the returned message ID. Requires Pro.',
+				description: 'Sends a multiple-choice poll (2–12 options) to a chat. Use it instead of an open question when you need a structured answer — WhatsApp renders tappable options. Returns {sent: true, messageId, chatId, type, timestamp, status} — status is "sent" once WhatsApp accepts it, and advances to "delivered" / "read" asynchronously; note it describes the POLL\'s delivery, not whether anyone voted. Votes arrive on the Trigger node\'s "Poll Vote" event as they are cast; to read the current standing at any time, pass the returned messageId to Get Poll Results. Unlike Send Text, a poll cannot be auto-queued when the anti-ban limiter blocks it: the send is refused with a retry-after rather than held, so retry it later. Requires Pro.',
 			},
 			{
 				name: 'Send Text',
