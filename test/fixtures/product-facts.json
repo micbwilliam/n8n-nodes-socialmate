@@ -460,7 +460,7 @@
     {
       "method": "GET",
       "path": "/v1/api-keys",
-      "scope": "read",
+      "scope": "admin",
       "pro": false,
       "proFeature": null,
       "deprecated": false
@@ -620,7 +620,7 @@
     {
       "method": "GET",
       "path": "/v1/webhooks",
-      "scope": "read",
+      "scope": "admin",
       "pro": false,
       "proFeature": null,
       "deprecated": false
@@ -644,7 +644,7 @@
     {
       "method": "GET",
       "path": "/v1/webhooks/:id",
-      "scope": "read",
+      "scope": "admin",
       "pro": false,
       "proFeature": null,
       "deprecated": false
@@ -660,7 +660,7 @@
     {
       "method": "GET",
       "path": "/v1/webhooks/:id/deliveries",
-      "scope": "read",
+      "scope": "admin",
       "pro": false,
       "proFeature": null,
       "deprecated": false
