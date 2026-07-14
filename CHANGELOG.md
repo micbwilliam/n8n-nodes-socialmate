@@ -1,36 +1,34 @@
-## [2.8.0] — 2026-07-09
+## [2.7.1] — 2026-07-14
 
-Productizes the node as the best **WhatsApp AI agent tool for n8n** (and MCP). See
-[`docs/AI-AGENT-TOOL-GUIDE.md`](docs/AI-AGENT-TOOL-GUIDE.md).
+Documentation-only release — no operation, endpoint or event behaviour changed. A pre-launch audit
+of the README against the app's source found six factual errors; a workflow built from the old text
+could have been wired wrong.
 
-### Added
-- **AI-grade operation descriptions.** All ~50 operations rewritten so an AI Agent reliably selects
-  and fills them — third person, what each returns, when-not-to-use, and sibling disambiguation
-  (e.g. Get AI Context vs Search). Admin/diagnostic ops are prefixed "Administrative —" so a
-  conversational agent deprioritizes them.
-- **AI-Agent-tool + MCP examples:** [`examples/ai-agent-tool.json`](examples/ai-agent-tool.json)
-  (SocialMate on an AI Agent's tool input, with `$fromAI`) and
-  [`examples/mcp-server-trigger.json`](examples/mcp-server-trigger.json) (expose SocialMate to Claude
-  Desktop / Cursor via n8n's MCP Server Trigger). Plus the deep guide + 11 use cases.
-- **Discoverability:** node `alias` list (WhatsApp, AI, agent, chatbot, MCP…) and a control-surface
-  node description.
-- **Poll cursor for inbound (Message → Search / List):** a new **After Timestamp (`afterTs`)** filter
-  returns only messages after a Unix-ms cursor — pass the newest timestamp you saw to fetch just
-  what's new. This is the pull-side answer to "how does an agent know a message arrived" when it can't
-  use the Trigger (e.g. a pure-MCP agent). The standalone `socialmate-mcp` server (now 30 WhatsApp
-  tools) exposes it as `whatsapp_fetch_new_messages`.
-
-### Changed
-- **BREAKING (Group → Create):** the "Group Name" field key is renamed `name` → `groupName` so n8n's
-  `$fromAI` ✦ button works (n8n#28261). The API still receives `{name}`. Re-enter the group name in
-  any saved Group: Create step after upgrading.
+### Fixed
+- **The trigger event list was missing 3 of the 35 events** — `message.delivered`, `message.read`
+  (delivery receipts) and `media.context_updated` (Agent Memory). The node's picker always offered
+  all 35 with correct `(Pro)` labels; only the README under-listed them. Also corrected "the other
+  **24** require Pro" → **26** (35 − 9).
+- **`Account → Get Proxy` was shown as Pro.** It is **Free** (a masked read). Only **Set Proxy** and
+  **Clear Proxy** are Pro — and both need an **`admin`**-scope key, which the scope table now says.
+- **`Sync → Trigger` was documented as `send` scope.** It requires **`admin`**.
+- **`Get AI Context`'s example put `tokenEstimate` at the top level.** It lives inside **`meta`** —
+  the README contradicted its own field list four paragraphs earlier. The example now shows the real
+  shape (`account`, `chat`, `messages`, `transcript`, `meta`).
+- **The MCP server was described as exposing 38 tools.** It exposes **44**.
+- Added an honesty note on delivery receipts: a contact with read receipts disabled never emits
+  `message.read`, so its absence is not proof a message went unread.
 
 ## [2.7.0] — 2026-07-08
 
 Production-hardening release: two correctness fixes on the most common paths, first-class AI-Agent
-tool support, and the node's first test suite. See
+tool support, the node's first test suite, and the AI-agent productization (operation descriptions,
+examples, the `afterTs` poll cursor). See
 [`docs/CAPABILITY-AUDIT-AND-ROADMAP.md`](docs/CAPABILITY-AUDIT-AND-ROADMAP.md) for the full audit and
-the roadmap of planned capabilities (typing, mark-read, reply, poll, reaction, location, …).
+[`docs/AI-AGENT-TOOL-GUIDE.md`](docs/AI-AGENT-TOOL-GUIDE.md) for the agent guide.
+
+> **Note.** An earlier draft of this file listed the AI-agent work below under a `[2.8.0]` heading.
+> That version was never published — all of it shipped **inside 2.7.0**. There is no 2.8.0 on npm.
 
 ### Fixed
 - **Send `429` anti-ban blocks no longer hang or fail opaquely.** A Free-tier send refused by the
@@ -52,9 +50,27 @@ the roadmap of planned capabilities (typing, mark-read, reply, poll, reaction, l
   `202` queue, pagination + the Get-Batches no-loop guard), trigger **HMAC** verification, and a
   **contract-drift guard** against a vendored `product-facts.json`. Plus `npm run test:live` (opt-in
   smoke against a running app) and `npm run sync:contract`.
+- **AI-grade operation descriptions.** Every operation rewritten so an AI Agent reliably selects and
+  fills it — third person, what each returns, when-not-to-use, and sibling disambiguation (e.g. Get
+  AI Context vs Search). Admin/diagnostic ops are prefixed "Administrative —" so a conversational
+  agent deprioritizes them.
+- **AI-Agent-tool + MCP examples:** [`examples/ai-agent-tool.json`](examples/ai-agent-tool.json)
+  (SocialMate on an AI Agent's tool input, with `$fromAI`) and
+  [`examples/mcp-server-trigger.json`](examples/mcp-server-trigger.json) (expose SocialMate to Claude
+  Desktop / Cursor via n8n's MCP Server Trigger). Plus the deep guide + 11 use cases.
+- **Discoverability:** node `alias` list (WhatsApp, AI, agent, chatbot, MCP…) and a control-surface
+  node description.
+- **Poll cursor for inbound (Message → Search / List):** a new **After Timestamp (`afterTs`)** filter
+  returns only messages after a Unix-ms cursor — pass the newest timestamp you saw to fetch just
+  what's new. This is the pull-side answer to "how does an agent know a message arrived" when it
+  can't use the Trigger (e.g. a pure-MCP agent). The standalone `socialmate-mcp` server exposes it as
+  `whatsapp_fetch_new_messages`.
 
 ### Changed
 - Codex node-type identifier corrected (`n8n-nodes-base.*` → `n8n-nodes-socialmate.*`).
+- **BREAKING (Group → Create):** the "Group Name" field key is renamed `name` → `groupName` so n8n's
+  `$fromAI` ✦ button works (n8n#28261). The API still receives `{name}`. Re-enter the group name in
+  any saved Group: Create step after upgrading.
 
 ## [2.6.0](https://github.com/micbwilliam/n8n-nodes-socialmate/compare/v2.5.0...v2.6.0) (2026-07-06)
 

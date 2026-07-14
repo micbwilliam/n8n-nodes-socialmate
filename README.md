@@ -82,7 +82,7 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 | **Group** | Get Many · Get · Get Invite Link | Create · Update Participants · Set Subject · Set Description · Leave |
 | **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup · Set Context (Agent Memory — cache an AI description) |
 | **Queue** | Get Status · Get Items · Get Batches | Enqueue · Queue a Batch · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
-| **Account** | Get Many · Get · Get Anti-Ban Status | Get Proxy · Set Proxy · Clear Proxy |
+| **Account** | Get Many · Get · Get Anti-Ban Status · Get Proxy (masked) | Set Proxy · Clear Proxy *(need an `admin`-scope key)* |
 | **Sync** | Get Status | Trigger |
 | **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries | — |
 | **API Key** | Get Many · Create · Rotate · Delete | — |
@@ -132,7 +132,7 @@ before replying — a combination no official / Business-API node offers.
 > call the operation from a normal (non-agent) node, or use **MCP** (below), which bypasses it.
 
 **Prefer MCP (Claude Desktop / Cursor / any client)?** SocialMate ships a native **Model Context
-Protocol** server, `socialmate-mcp`, exposing 38 WhatsApp tools (see **API & Integrations → MCP** in
+Protocol** server, `socialmate-mcp`, exposing 44 WhatsApp tools (see **API & Integrations → MCP** in
 the app for the copy-paste config), plus an n8n MCP Server Trigger recipe. One thing to know: MCP is
 request/response with **no inbound push**, so to auto-react to incoming messages you either poll the
 `whatsapp_fetch_new_messages` tool or drive the loop from the **SocialMate Trigger** below. Full
@@ -161,19 +161,24 @@ send budget — an agent can be human without spending its message allowance.
 The **SocialMate Trigger** covers all **35 events**. **9 are available on Free** —
 `message.received`, `message.sent`, `account.connected`, `account.disconnected`,
 `tunnel.url_changed`, `tunnel.stopped`, `license.activated`, `license.deactivated`,
-`license.tier_changed`; the other 24 (incl. `tunnel.started`, the conversational events
-`message.reaction` / `poll.vote` / `group.participants_updated`, the Agent Memory
-`media.context_updated` event, and the High-Volume Mode `account.danger_mode_*` events)
-require Pro and are labelled `(Pro)` in the picker:
+`license.tier_changed`; the other **26** (incl. `tunnel.started`, the delivery receipts
+`message.delivered` / `message.read`, the conversational events `message.reaction` /
+`poll.vote` / `group.participants_updated`, the Agent Memory `media.context_updated` event,
+and the High-Volume Mode `account.danger_mode_*` events) require Pro and are labelled `(Pro)`
+in the picker:
 
-- **Messaging:** `message.received`, `message.sent`, `message.reaction` (Pro), `poll.vote` (Pro)
+- **Messaging:** `message.received`, `message.sent`, `message.delivered` (Pro), `message.read` (Pro), `message.reaction` (Pro), `poll.vote` (Pro)
 - **Groups:** `group.participants_updated` (Pro) — join, leave, promote, demote
 - **Accounts:** `account.connected`, `account.disconnected`, `account.banned`, `contacts.updated`, `account.danger_mode_enabled`, `account.danger_mode_disabled`
 - **Tunnel:** `tunnel.started`, `tunnel.url_changed`, `tunnel.stopped`
 - **Sync:** `sync.started`, `sync.completed`, `sync.failed`
-- **Media:** `media.discovered`, `media.downloaded`, `media.failed`, `media.deleted`
+- **Media:** `media.discovered`, `media.downloaded`, `media.failed`, `media.deleted`, `media.context_updated`
 - **Smart queue:** `queue.item.enqueued`, `queue.item.processing`, `queue.item.sent`, `queue.item.failed`, `queue.item.cancelled`, `queue.batch.created`, `queue.batch.completed`, `queue.batch.cancelled`
 - **License:** `license.activated`, `license.deactivated`, `license.tier_changed`
+
+> **Delivery receipts.** `message.sent` only means "handed to WhatsApp". `message.delivered` and
+> `message.read` close the loop — but a contact with read receipts turned off never produces
+> `message.read`, so its absence is **not** proof the message went unread. Correlate on `messageId`.
 
 Every delivery is a JSON envelope: `{ "version", "event", "timestamp", "tunnelUrl", "data": { … } }`. A
 `message.received` example:
@@ -219,10 +224,24 @@ API shapes (handy when mapping fields). Responses are wrapped in the `{ "data": 
 { "chatId": "15551234567", "media": { "type": "image", "url": "https://example.com/p.jpg", "caption": "Invoice" } }
 ```
 
-**Message → Get AI Context** (Pro) — when to use: give an AI agent the whole thread in one call:
+**Message → Get AI Context** (Pro) — when to use: give an AI agent the whole thread in one call.
+Note `tokenEstimate` lives inside **`meta`**, not at the top level:
 
 ```json
-{ "data": { "account": { "id": "acct_1", "name": "Sales" }, "chat": { "id": "15551234567", "name": "Jane" }, "messages": [ { "role": "user", "content": "Hi" } ], "transcript": "Jane: Hi", "tokenEstimate": 8 } }
+{
+  "data": {
+    "account": { "id": "acct_1", "name": "Sales", "phone": "15551230000" },
+    "chat": { "id": "15551234567", "name": "Jane" },
+    "messages": [ { "role": "user", "name": "Jane", "content": "Hi", "ts": 1750000000000, "type": "text" } ],
+    "transcript": "Jane: Hi",
+    "meta": {
+      "totalMessages": 1, "returnedMessages": 1, "truncated": false,
+      "oldestReturnedTs": 1750000000000, "newestReturnedTs": 1750000000000,
+      "tokenEstimate": 8,
+      "window": { "maxMessages": 50, "maxTokens": 4000 }
+    }
+  }
+}
 ```
 
 **Queue → Queue a Batch** (Pro; opt-in, off by default) — when several people who are **already
@@ -247,9 +266,13 @@ counter is near its `max`, back off (sending anyway just auto-queues on Pro or r
 
 Keys carry one or more scopes; an operation that needs more than the key has returns `403`:
 
-- **read** — all `GET` operations (accounts, chats, contacts, media, status…).
-- **send** — sending messages and triggering downloads/sync.
-- **admin** — managing webhooks and API keys (the Trigger needs this to self-register).
+- **read** — `GET` operations (accounts, chats, contacts, groups, media, status…).
+- **send** — sending messages, the signal lane (react / mark read / typing), enqueuing to the
+  smart queue, and forcing a media download. Also the Agent Memory writes (Contact → Update,
+  Media → Set Context) — saving what your agent learned shouldn't require account-admin rights.
+- **admin** — managing webhooks and API keys (the Trigger needs this to self-register),
+  **triggering a Sync**, and **Set / Clear Proxy**. The rule of thumb: `read` means *your WhatsApp
+  data*; anything that changes *how the server itself is wired* is `admin`.
 
 ## Errors
 
