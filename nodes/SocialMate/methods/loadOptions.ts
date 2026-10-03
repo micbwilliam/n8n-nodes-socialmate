@@ -15,6 +15,20 @@ export async function getAccounts(this: ILoadOptionsFunctions): Promise<INodePro
 	}));
 }
 
+/** Native AI agents dropdown (Pro — a Free server answers 402, shown as a load error). */
+export async function getAgents(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const agents = (await socialmateApiRequest.call(this, 'GET', '/v1/agents')) as Array<{
+		id: string;
+		name?: string;
+		accountLabel?: string;
+		status?: string;
+	}>;
+	return (agents ?? []).map((a) => ({
+		name: `${a.name || a.id}${a.accountLabel ? ` (${a.accountLabel})` : ''}${a.status ? ` — ${a.status}` : ''}`,
+		value: a.id,
+	}));
+}
+
 /** Chats dropdown for the currently-selected account. */
 export async function getChats(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	const accountId = this.getNodeParameter('accountId', '') as string;

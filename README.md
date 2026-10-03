@@ -83,6 +83,7 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 | **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup · Set Context (Agent Memory — cache an AI description) |
 | **Queue** | Get Status · Get Items · Get Batches | Enqueue · Queue a Batch · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
 | **Account** | Get Many · Get · Get Anti-Ban Status · Get Proxy (masked) | Set Proxy · Clear Proxy *(need an `admin`-scope key)* |
+| **Agent** (native AI agent) | — | Get Many · Get · Get Usage · Get Usage Summary · Get Approvals · Get Handoffs · Get Knowledge · Send Event *(`send` scope)* · Update · Pause · Resume · Decide Approval · Take Over Chat · Release Chat · Reply in Chat · Add Knowledge *(these last eight need an `admin`-scope key)* |
 | **Sync** | Get Status | Trigger |
 | **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries | — |
 | **API Key** | Get Many · Create · Rotate · Delete | — |
@@ -132,7 +133,7 @@ before replying — a combination no official / Business-API node offers.
 > call the operation from a normal (non-agent) node, or use **MCP** (below), which bypasses it.
 
 **Prefer MCP (Claude Desktop / Cursor / any client)?** SocialMate ships a native **Model Context
-Protocol** server, `socialmate-mcp`, exposing 44 WhatsApp tools (see **API & Integrations → MCP** in
+Protocol** server, `socialmate-mcp`, exposing 59 WhatsApp tools (see **API & Integrations → MCP** in
 the app for the copy-paste config), plus an n8n MCP Server Trigger recipe. One thing to know: MCP is
 request/response with **no inbound push**, so to auto-react to incoming messages you either poll the
 `whatsapp_fetch_new_messages` tool or drive the loop from the **SocialMate Trigger** below. Full
@@ -158,14 +159,14 @@ send budget — an agent can be human without spending its message allowance.
 
 ## Trigger events
 
-The **SocialMate Trigger** covers all **35 events**. **9 are available on Free** —
+The **SocialMate Trigger** covers all **48 events**. **9 are available on Free** —
 `message.received`, `message.sent`, `account.connected`, `account.disconnected`,
 `tunnel.url_changed`, `tunnel.stopped`, `license.activated`, `license.deactivated`,
-`license.tier_changed`; the other **26** (incl. `tunnel.started`, the delivery receipts
+`license.tier_changed`; the other **39** (incl. `tunnel.started`, the delivery receipts
 `message.delivered` / `message.read`, the conversational events `message.reaction` /
 `poll.vote` / `group.participants_updated`, the Agent Memory `media.context_updated` event,
-and the High-Volume Mode `account.danger_mode_*` events) require Pro and are labelled `(Pro)`
-in the picker:
+the High-Volume Mode `account.danger_mode_*` events and the 13 native AI agent events) require
+Pro and are labelled `(Pro)` in the picker:
 
 - **Messaging:** `message.received`, `message.sent`, `message.delivered` (Pro), `message.read` (Pro), `message.reaction` (Pro), `poll.vote` (Pro)
 - **Groups:** `group.participants_updated` (Pro) — join, leave, promote, demote
@@ -175,6 +176,7 @@ in the picker:
 - **Media:** `media.discovered`, `media.downloaded`, `media.failed`, `media.deleted`, `media.context_updated`
 - **Smart queue:** `queue.item.enqueued`, `queue.item.processing`, `queue.item.sent`, `queue.item.failed`, `queue.item.cancelled`, `queue.batch.created`, `queue.batch.completed`, `queue.batch.cancelled`
 - **License:** `license.activated`, `license.deactivated`, `license.tier_changed`
+- **Native AI agent** (Pro): `agent.reply_sent`, `agent.draft_created`, `agent.approval_requested`, `agent.approval_decided`, `agent.handoff_requested`, `agent.handoff_resolved`, `agent.paused`, `agent.resumed`, `agent.budget_warning`, `agent.injection_detected`, `agent.job_failed`, `agent.lead_captured`, `connector.revoked`
 
 > **Delivery receipts.** `message.sent` only means "handed to WhatsApp". `message.delivered` and
 > `message.read` close the loop — but a contact with read receipts turned off never produces
@@ -270,8 +272,10 @@ Keys carry one or more scopes; an operation that needs more than the key has ret
 - **send** — sending messages, the signal lane (react / mark read / typing), enqueuing to the
   smart queue, and forcing a media download. Also the Agent Memory writes (Contact → Update,
   Media → Set Context) — saving what your agent learned shouldn't require account-admin rights.
+  And **Agent → Send Event**, which can result in a WhatsApp message exactly like enqueuing one.
 - **admin** — managing webhooks and API keys (the Trigger needs this to self-register),
-  **triggering a Sync**, and **Set / Clear Proxy**. The rule of thumb: `read` means *your WhatsApp
+  **triggering a Sync**, **Set / Clear Proxy**, and every **Agent** write except Send Event
+  (Update, Pause, Resume, Decide Approval, Take Over / Release / Reply in Chat, Add Knowledge). The rule of thumb: `read` means *your WhatsApp
   data*; anything that changes *how the server itself is wired* is `admin`.
 
 ## Errors

@@ -14,8 +14,9 @@ import {
 	SOCIALMATE_CREDENTIAL,
 	SocialMateBlockedError,
 } from './GenericFunctions';
-import { getAccounts, getChats, getGroups } from './methods/loadOptions';
+import { getAccounts, getAgents, getChats, getGroups } from './methods/loadOptions';
 import { accountIdProperty } from './descriptions/common';
+import { agentOperations, agentFields } from './descriptions/agent';
 import { messageOperations, messageFields } from './descriptions/message';
 import { chatOperations, chatFields } from './descriptions/chat';
 import { contactOperations, contactFields } from './descriptions/contact';
@@ -82,6 +83,7 @@ export class SocialMate implements INodeType {
 				noDataExpression: true,
 				options: [
 					{ name: 'Account', value: 'account' },
+					{ name: 'Agent', value: 'agent' },
 					{ name: 'API Key', value: 'apiKey' },
 					{ name: 'Chat', value: 'chat' },
 					{ name: 'Contact', value: 'contact' },
@@ -106,6 +108,7 @@ export class SocialMate implements INodeType {
 			...webhookOperations,
 			...apiKeyOperations,
 			...systemOperations,
+			...agentOperations,
 			accountIdProperty,
 			...messageFields,
 			...chatFields,
@@ -118,11 +121,12 @@ export class SocialMate implements INodeType {
 			...webhookFields,
 			...apiKeyFields,
 			...systemFields,
+			...agentFields,
 		],
 	};
 
 	methods = {
-		loadOptions: { getAccounts, getChats, getGroups },
+		loadOptions: { getAccounts, getAgents, getChats, getGroups },
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -547,6 +551,105 @@ export class SocialMate implements INodeType {
 						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/api-keys/${this.getNodeParameter('keyId', i)}/rotate`);
 					} else {
 						responseData = await socialmateApiRequest.call(this, 'DELETE', `/v1/api-keys/${this.getNodeParameter('keyId', i)}`);
+					}
+				}
+
+				// ─── Agent (native AI agent, Pro `aiEnabled`) ─────────────
+				else if (resource === 'agent') {
+					if (operation === 'getMany') {
+						responseData = await socialmateApiRequest.call(this, 'GET', '/v1/agents');
+					} else if (operation === 'getUsageSummary') {
+						responseData = await socialmateApiRequest.call(this, 'GET', '/v1/usage/summary');
+					} else {
+						const agentId = (this.getNodeParameter('agentId', i) as string).trim();
+						if (!agentId) throw new NodeOperationError(this.getNode(), 'Select an Agent.', { itemIndex: i });
+						const base = `/v1/agents/${encodeURIComponent(agentId)}`;
+						const chatPath = (): string => {
+							const jid = toParticipantJid(this.getNodeParameter('agentChatId', i) as string);
+							if (!jid) throw new NodeOperationError(this.getNode(), 'Chat ID / Phone Number is required.', { itemIndex: i });
+							return `${base}/chats/${encodeURIComponent(jid)}`;
+						};
+
+						if (operation === 'get') {
+							responseData = await socialmateApiRequest.call(this, 'GET', base);
+						} else if (operation === 'update') {
+							// Only fields the user added are sent; the app ignores `status`
+							// here (Pause / Resume own it). `configVersion` is the optimistic
+							// lock — a stale one answers 409 version_conflict.
+							const fields = this.getNodeParameter('agentUpdateFields', i, {}) as IDataObject;
+							const body: IDataObject = {};
+							for (const key of ['name', 'purpose', 'autonomy', 'customPrompt'] as const) {
+								if (fields[key] !== undefined) body[key] = fields[key];
+							}
+							if (typeof fields.configVersion === 'number' && fields.configVersion > 0) body.configVersion = fields.configVersion;
+							responseData = await socialmateApiRequest.call(this, 'PATCH', base, body);
+						} else if (operation === 'pause' || operation === 'resume') {
+							responseData = await socialmateApiRequest.call(this, 'POST', `${base}/${operation}`);
+						} else if (operation === 'getUsage') {
+							responseData = await socialmateApiRequest.call(this, 'GET', `${base}/usage`, {}, { range: this.getNodeParameter('usageRange', i, '7d') as string });
+						} else if (operation === 'getApprovals') {
+							responseData = await socialmateApiRequest.call(this, 'GET', `${base}/approvals`, {}, { status: this.getNodeParameter('approvalStatus', i, 'pending') as string });
+						} else if (operation === 'decideApproval') {
+							const opts = this.getNodeParameter('decisionOptions', i, {}) as IDataObject;
+							const body: IDataObject = { decision: this.getNodeParameter('decision', i) as string };
+							if (opts.note) body.note = opts.note;
+							if (opts.decidedBy) body.decidedBy = opts.decidedBy;
+							const approvalId = (this.getNodeParameter('approvalId', i) as string).trim();
+							responseData = await socialmateApiRequest.call(this, 'POST', `${base}/approvals/${encodeURIComponent(approvalId)}`, body);
+						} else if (operation === 'getHandoffs') {
+							responseData = await socialmateApiRequest.call(this, 'GET', `${base}/handoffs`, {}, { status: this.getNodeParameter('handoffStatus', i, 'open') as string });
+						} else if (operation === 'takeOverChat') {
+							responseData = await socialmateApiRequest.call(this, 'POST', `${chatPath()}/takeover`);
+						} else if (operation === 'releaseChat') {
+							responseData = await socialmateApiRequest.call(this, 'POST', `${chatPath()}/release`);
+						} else if (operation === 'replyInChat') {
+							responseData = await socialmateApiRequest.call(this, 'POST', `${chatPath()}/reply`, { text: this.getNodeParameter('replyText', i) as string });
+						} else if (operation === 'sendEvent') {
+							const opts = this.getNodeParameter('eventOptions', i, {}) as IDataObject;
+							const recipient: IDataObject = { phone: (this.getNodeParameter('recipientPhone', i) as string).trim() };
+							if (opts.recipientName) recipient.name = opts.recipientName;
+							if (opts.recipientLocale) recipient.locale = opts.recipientLocale;
+							const body: IDataObject = {
+								type: (this.getNodeParameter('eventType', i) as string).trim(),
+								idempotencyKey: (this.getNodeParameter('idempotencyKey', i) as string).trim(),
+								recipient,
+							};
+							if (opts.job) body.job = opts.job;
+							if (opts.data !== undefined && opts.data !== '') {
+								let data: unknown = opts.data;
+								if (typeof data === 'string') {
+									try {
+										data = JSON.parse(data);
+									} catch {
+										throw new NodeOperationError(this.getNode(), 'Data (JSON) is not valid JSON.', { itemIndex: i });
+									}
+								}
+								if (!data || typeof data !== 'object' || Array.isArray(data)) {
+									throw new NodeOperationError(this.getNode(), 'Data (JSON) must be a JSON object, e.g. { "orderNumber": "1042" }.', { itemIndex: i });
+								}
+								if (Object.keys(data as IDataObject).length > 0) body.data = data as IDataObject;
+							}
+							if (opts.consentSource) {
+								const consent: IDataObject = { source: opts.consentSource };
+								const at = toUnixMs(opts.consentAt);
+								if (at !== null) consent.at = at;
+								body.consent = consent;
+							}
+							const occurredMs = toUnixMs(opts.occurredAt);
+							if (occurredMs !== null) body.occurredAt = new Date(occurredMs).toISOString();
+							responseData = await socialmateApiRequest.call(this, 'POST', `${base}/events`, body);
+						} else if (operation === 'getKnowledge') {
+							responseData = await socialmateApiRequest.call(this, 'GET', `${base}/knowledge`);
+						} else if (operation === 'addKnowledge') {
+							const opts = this.getNodeParameter('knowledgeOptions', i, {}) as IDataObject;
+							const body: IDataObject = { content: this.getNodeParameter('knowledgeContent', i) as string };
+							if (opts.kind) body.kind = opts.kind;
+							if (opts.title) body.title = opts.title;
+							if (opts.shared !== undefined) body.shared = opts.shared;
+							responseData = await socialmateApiRequest.call(this, 'POST', `${base}/knowledge`, body);
+						} else {
+							throw new NodeOperationError(this.getNode(), `Unknown Agent operation "${operation}".`, { itemIndex: i });
+						}
 					}
 				}
 

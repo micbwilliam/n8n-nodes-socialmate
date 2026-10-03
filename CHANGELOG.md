@@ -1,3 +1,34 @@
+## [2.8.0] — Unreleased
+
+Mirrors the native WhatsApp AI agent added to the SocialMate app (Pro, license flag `aiEnabled`).
+Every new operation and event is Pro; a Free server answers `402`.
+
+### Added
+- **Agent resource** (16 operations) over the app's `/v1/agents` API: **Get Many**, **Get**,
+  **Update** (name, purpose, autonomy `observe`/`copilot`/`autopilot`/`autonomous`, custom prompt —
+  with an optional **Config Version** for optimistic locking; a stale one returns `409
+  version_conflict`), **Pause**, **Resume**, **Get Usage** (`today`/`7d`/`14d`/`30d`/`90d`),
+  **Get Usage Summary**, **Get Approvals**, **Decide Approval**, **Get Handoffs**, **Take Over
+  Chat**, **Release Chat**, **Reply in Chat**, **Send Event** (start an agent job from a site event:
+  type, idempotency key, recipient, optional job, data JSON and consent), **Get Knowledge** and
+  **Add Knowledge**. The agent is picked from a dropdown (new `getAgents` load-options method). Reads
+  need a `read` key, Send Event a `send` key, every other write an `admin` key. Chat operations
+  accept a JID or a phone number.
+- **13 Pro trigger events** (35 → 48): `agent.reply_sent`, `agent.draft_created`,
+  `agent.approval_requested`, `agent.approval_decided`, `agent.handoff_requested`,
+  `agent.handoff_resolved`, `agent.paused`, `agent.resumed`, `agent.budget_warning`,
+  `agent.injection_detected`, `agent.job_failed`, `agent.lead_captured`, `connector.revoked`.
+- **Contract drift guard:** the fixture is synced to app 2.0.2 (99 endpoints, 48 events). App
+  endpoints the node deliberately does not call (agent create/delete, run logs, conversations, chat
+  messages, per-contact memory, knowledge delete, `/v1/ai/settings`, `/v1/ai/senses*`,
+  `/v1/connectors/wordpress*`) sit in a commented exemption list, checked so it cannot go stale —
+  "node ⊇ app" still fails on any new, unlisted endpoint.
+- Wire-shape tests for every Agent operation (`test/unit/agent-execute.test.ts`).
+
+### Changed
+- README: Agent row in the Free-vs-Pro table, agent events in the event list, Agent scopes in the
+  scope list, and the MCP server's tool count (44 → 59, as `socialmate-mcp` gains the agent tools).
+
 ## [2.7.1] — 2026-07-14
 
 Documentation-only release — no operation, endpoint or event behaviour changed. A pre-launch audit
@@ -28,7 +59,8 @@ examples, the `afterTs` poll cursor). See
 [`docs/AI-AGENT-TOOL-GUIDE.md`](docs/AI-AGENT-TOOL-GUIDE.md) for the agent guide.
 
 > **Note.** An earlier draft of this file listed the AI-agent work below under a `[2.8.0]` heading.
-> That version was never published — all of it shipped **inside 2.7.0**. There is no 2.8.0 on npm.
+> That version was never published — all of it shipped **inside 2.7.0**. The real 2.8.0 is the
+> agent release above.
 
 ### Fixed
 - **Send `429` anti-ban blocks no longer hang or fail opaquely.** A Free-tier send refused by the

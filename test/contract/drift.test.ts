@@ -87,15 +87,74 @@ const NODE_ENDPOINTS: string[] = [
 	'POST /v1/api-keys',
 	'POST /v1/api-keys/:id/rotate',
 	'DELETE /v1/api-keys/:id',
+	// Native AI agent (Pro `aiEnabled`) — the Agent resource.
+	'GET /v1/agents',
+	'GET /v1/agents/:id',
+	'PATCH /v1/agents/:id',
+	'POST /v1/agents/:id/pause',
+	'POST /v1/agents/:id/resume',
+	'GET /v1/agents/:id/usage',
+	'GET /v1/usage/summary',
+	'GET /v1/agents/:id/approvals',
+	'POST /v1/agents/:id/approvals/:aid',
+	'GET /v1/agents/:id/handoffs',
+	'POST /v1/agents/:id/chats/:chatId/takeover',
+	'POST /v1/agents/:id/chats/:chatId/release',
+	'POST /v1/agents/:id/chats/:chatId/reply',
+	'POST /v1/agents/:id/events',
+	'GET /v1/agents/:id/knowledge',
+	'POST /v1/agents/:id/knowledge',
 ];
+
+/**
+ * App endpoints the node DELIBERATELY does not call. Every entry needs a reason;
+ * "node ⊇ app" is checked against NODE_ENDPOINTS + this list, so a NEW app
+ * endpoint still fails the test until it is either wired up or listed here.
+ */
+const DELIBERATELY_UNCALLED: Record<string, string> = {
+	// Agent lifecycle is set up in the app (provider, model, persona); a workflow
+	// creating or deleting agents is a footgun, not an automation.
+	'POST /v1/accounts/:id/agent': 'agent creation is done in the app',
+	'DELETE /v1/agents/:id': 'irreversible; done in the app',
+	// Debug / audit views — large, run-by-run payloads meant for the app's UI.
+	'GET /v1/agents/:id/runs': 'run log is an app debugging view',
+	'GET /v1/agents/:id/runs/:runId': 'run log is an app debugging view',
+	'GET /v1/agents/:id/conversations': 'inbox view; Get Handoffs/Approvals cover the workflow cases',
+	// Message history already has a first-class path (Message → Search / Get AI Context).
+	'GET /v1/agents/:id/chats/:chatId/messages': 'covered by Message → Search / Get AI Context',
+	// Per-contact agent memory is the agent's own state, not workflow data.
+	'GET /v1/agents/:id/memory/:chatId': 'agent-internal memory',
+	'POST /v1/agents/:id/memory/:chatId': 'agent-internal memory',
+	'DELETE /v1/agents/:id/knowledge/:kid': 'destructive; knowledge is pruned in the app',
+	// Global agent settings: an admin key for ALL accounts, server configuration.
+	'GET /v1/ai/settings': 'global kill switch / spend cap is app configuration',
+	'PUT /v1/ai/settings': 'global kill switch / spend cap is app configuration',
+	'GET /v1/ai/senses': 'voice/photo provider setup is app configuration',
+	'PUT /v1/ai/senses': 'voice/photo provider setup is app configuration',
+	'POST /v1/ai/senses/test': 'voice/photo provider setup is app configuration',
+	// WordPress connector pairing is driven by the SocialMate Agent Connect plugin.
+	'POST /v1/connectors/wordpress': 'owned by the WordPress plugin',
+	'POST /v1/connectors/wordpress/:id/verify': 'owned by the WordPress plugin',
+	'POST /v1/connectors/wordpress/:id/manifest': 'owned by the WordPress plugin',
+	'PATCH /v1/connectors/wordpress/:id': 'owned by the WordPress plugin',
+	'DELETE /v1/connectors/wordpress/:id': 'owned by the WordPress plugin',
+};
 
 const fixtureActive = facts.endpoints.filter((e) => !e.deprecated).map((e) => `${e.method} ${e.path}`);
 const fixtureDeprecated = facts.endpoints.filter((e) => e.deprecated).map((e) => `${e.method} ${e.path}`);
 
 describe('REST endpoint drift vs the app (product-facts.json)', () => {
-	it('covers every ACTIVE app endpoint (node ⊇ app active set)', () => {
-		const missing = fixtureActive.filter((e) => !NODE_ENDPOINTS.includes(e));
+	it('covers every ACTIVE app endpoint (node ⊇ app active set, minus the deliberate exemptions)', () => {
+		const missing = fixtureActive.filter((e) => !NODE_ENDPOINTS.includes(e) && !(e in DELIBERATELY_UNCALLED));
 		expect(missing, `node is missing endpoints the app exposes: ${missing.join(', ')}`).toEqual([]);
+	});
+
+	it('keeps the exemption list honest (every entry is a real app endpoint the node does not call)', () => {
+		const all = facts.endpoints.map((e) => `${e.method} ${e.path}`);
+		for (const e of Object.keys(DELIBERATELY_UNCALLED)) {
+			expect(all, `stale exemption: ${e}`).toContain(e);
+			expect(NODE_ENDPOINTS, `exempted but called: ${e}`).not.toContain(e);
+		}
 	});
 
 	it('calls no endpoint the app does not expose (node ⊆ app set)', () => {
@@ -117,8 +176,8 @@ describe('Webhook event drift vs the app', () => {
 	const nodeAll = EVENT_OPTIONS.map((e) => e.value);
 	const nodeFree = EVENT_OPTIONS.filter((e) => !e.name.includes('(Pro)')).map((e) => e.value);
 
-	it('exposes exactly the app\'s 35 events', () => {
-		expect(nodeAll.length).toBe(35);
+	it('exposes exactly the app\'s 48 events', () => {
+		expect(nodeAll.length).toBe(48);
 		expect([...nodeAll].sort()).toEqual([...facts.webhookEvents.all].sort());
 	});
 
