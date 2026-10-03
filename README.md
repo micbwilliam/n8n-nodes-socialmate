@@ -83,7 +83,7 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 | **Media** | Get Many · Get · Get Stats · Download File · Download Thumbnail · Get Download Queue | Force Download · Delete · Run Cleanup · Set Context (Agent Memory — cache an AI description) |
 | **Queue** | Get Status · Get Items · Get Batches | Enqueue · Queue a Batch · Pause · Resume · Cancel/Retry Item · Cancel/Retry Batch |
 | **Account** | Get Many · Get · Get Anti-Ban Status · Get Proxy (masked) | Set Proxy · Clear Proxy *(need an `admin`-scope key)* |
-| **Agent** (native AI agent) | — | Get Many · Get · Get Usage · Get Usage Summary · Get Approvals · Get Handoffs · Get Knowledge · Send Event *(`send` scope)* · Update · Pause · Resume · Decide Approval · Take Over Chat · Release Chat · Reply in Chat · Add Knowledge *(these last eight need an `admin`-scope key)* |
+| **Agent** (the Claude Agent — SocialMate's built-in AI agent, built on Anthropic's Claude Agent SDK; model of your choice) | — | Get Many · Get · Get Usage · Get Usage Summary · Get Approvals · Get Handoffs · Get Knowledge · Send Event *(`send` scope)* · Update · Pause · Resume · Decide Approval · Take Over Chat · Release Chat · Reply in Chat · Add Knowledge *(these last eight need an `admin`-scope key)* |
 | **Sync** | Get Status | Trigger |
 | **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries | — |
 | **API Key** | Get Many · Create · Rotate · Delete | — |
@@ -165,7 +165,7 @@ The **SocialMate Trigger** covers all **48 events**. **9 are available on Free**
 `license.tier_changed`; the other **39** (incl. `tunnel.started`, the delivery receipts
 `message.delivered` / `message.read`, the conversational events `message.reaction` /
 `poll.vote` / `group.participants_updated`, the Agent Memory `media.context_updated` event,
-the High-Volume Mode `account.danger_mode_*` events and the 13 native AI agent events) require
+the High-Volume Mode `account.danger_mode_*` events and the 13 Claude Agent events) require
 Pro and are labelled `(Pro)` in the picker:
 
 - **Messaging:** `message.received`, `message.sent`, `message.delivered` (Pro), `message.read` (Pro), `message.reaction` (Pro), `poll.vote` (Pro)

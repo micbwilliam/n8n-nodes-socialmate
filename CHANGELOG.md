@@ -1,6 +1,6 @@
 ## [2.8.0] — Unreleased
 
-Mirrors the native WhatsApp AI agent added to the SocialMate app (Pro, license flag `aiEnabled`).
+Mirrors the **Claude Agent** — the WhatsApp AI agent built into the SocialMate app (Pro, license flag `aiEnabled`), built on Anthropic's Claude Agent SDK with the model of the customer's choice.
 Every new operation and event is Pro; a Free server answers `402`.
 
 ### Added
