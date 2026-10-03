@@ -251,6 +251,17 @@ export const agentFields: INodeProperties[] = [
 		default: {},
 		displayOptions: { show: { resource: ['agent'], operation: ['sendEvent'] } },
 		options: [
+			{
+				displayName: 'Audience',
+				name: 'audience',
+				type: 'options',
+				default: 'customer',
+				options: [
+					{ name: 'Customer', value: 'customer', description: 'Message the customer on the event' },
+					{ name: 'Owner', value: 'owner', description: 'Tell the business owner instead; the recipient phone must be one of the agent\'s owner numbers' },
+				],
+				description: 'Who the agent writes to',
+			},
 			{ displayName: 'Consent At', name: 'consentAt', type: 'dateTime', default: '', description: 'When the customer opted in' },
 			{ displayName: 'Consent Source', name: 'consentSource', type: 'string', default: '', description: 'Where the customer opted in (records the opt-in for this job). Needed for jobs other than order updates and booking/payment reminders unless an opt-in is already recorded.' },
 			{
@@ -260,6 +271,7 @@ export const agentFields: INodeProperties[] = [
 				default: '{}',
 				description: 'Facts the agent may use in the message (order number, items, tracking link…). It only uses what you send.',
 			},
+			{ displayName: 'Instruction', name: 'instruction', type: 'string', typeOptions: { rows: 3 }, default: '', description: 'What the owner wants the agent to do for this event, e.g. "Thank them and suggest the next visit". Max 1000 characters.' },
 			{ displayName: 'Job', name: 'job', type: 'string', default: '', description: 'Force a specific event job ID (it must be enabled on the agent)' },
 			{ displayName: 'Occurred At', name: 'occurredAt', type: 'dateTime', default: '', description: 'When the event happened' },
 			{ displayName: 'Recipient Locale', name: 'recipientLocale', type: 'string', default: '', placeholder: 'en', description: 'Customer language, e.g. en or ar' },

@@ -1,5 +1,7 @@
 ## [2.8.0] — Unreleased
 
+- **Send Event** takes an **Instruction** (the owner's words for the agent) and an **Audience** (customer, or the owner's own number).
+
 Mirrors the **Claude Agent** — the WhatsApp AI agent built into the SocialMate app (Pro, license flag `aiEnabled`), built on Anthropic's Claude Agent SDK with the model of the customer's choice.
 Every new operation and event is Pro; a Free server answers `402`.
 

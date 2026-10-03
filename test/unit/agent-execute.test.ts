@@ -79,6 +79,14 @@ describe('Agent resource → wire shapes', () => {
 		expect(reply.calls).toEqual([{ method: 'POST', path: '/v1/agents/ag1/chats/123%40lid/reply', body: { text: 'Hi, Sam here.' } }]);
 	});
 
+	it('Send Event passes the owner\'s instruction and the owner audience', async () => {
+		const { calls } = await run({
+			resource: 'agent', operation: 'sendEvent', agentId: 'ag1', eventType: 'booking.created', idempotencyKey: 'fb-booking-7', recipientPhone: '+201000000009',
+			eventOptions: { instruction: '  Tell me who booked.  ', audience: 'owner' },
+		});
+		expect(calls[0].body).toMatchObject({ instruction: 'Tell me who booked.', audience: 'owner' });
+	});
+
 	it('Send Event builds recipient, parses data JSON and converts dates', async () => {
 		const { calls } = await run({
 			resource: 'agent',

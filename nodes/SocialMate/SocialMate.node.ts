@@ -615,6 +615,8 @@ export class SocialMate implements INodeType {
 								recipient,
 							};
 							if (opts.job) body.job = opts.job;
+							if (typeof opts.instruction === 'string' && opts.instruction.trim()) body.instruction = opts.instruction.trim().slice(0, 1000);
+							if (opts.audience === 'owner' || opts.audience === 'customer') body.audience = opts.audience;
 							if (opts.data !== undefined && opts.data !== '') {
 								let data: unknown = opts.data;
 								if (typeof data === 'string') {
