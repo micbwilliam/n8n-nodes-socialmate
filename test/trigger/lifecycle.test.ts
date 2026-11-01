@@ -8,6 +8,7 @@ interface Endpoint {
 	id: string;
 	url: string;
 	events: string[];
+	enabled?: boolean;
 }
 
 /** An IHookFunctions stand-in over an in-memory /v1/webhooks store. */
@@ -76,5 +77,43 @@ describe('SocialMateTrigger lifecycle — never adopt an endpoint without its se
 		});
 		expect(await methods.checkExists.call(ctx as never)).toBe(true);
 		expect(calls).toContainEqual({ method: 'PATCH', path: '/v1/webhooks/wh_mine', body: { events: ['message.received', 'message.sent'] } });
+	});
+
+	it('a stray endpoint at our URL is deleted even when ours exists (no double delivery)', async () => {
+		const staticData: Record<string, unknown> = { webhookId: 'wh_mine', secret: 's' };
+		const { ctx, calls } = hookCtx({
+			endpoints: [
+				{ id: 'wh_wizard', url: URL_, events: ['message.received'] },
+				{ id: 'wh_mine', url: URL_, events: ['message.received'] },
+			],
+			staticData,
+		});
+		expect(await methods.checkExists.call(ctx as never)).toBe(true);
+		expect(calls.filter((c) => c.method !== 'GET')).toEqual([{ method: 'DELETE', path: '/v1/webhooks/wh_wizard' }]);
+		expect(staticData).toEqual({ webhookId: 'wh_mine', secret: 's' });
+	});
+
+	it('every stray at our URL is deleted when none is ours', async () => {
+		const staticData: Record<string, unknown> = {};
+		const { ctx, calls } = hookCtx({
+			endpoints: [
+				{ id: 'wh_a', url: URL_, events: ['message.received'] },
+				{ id: 'wh_b', url: URL_, events: ['message.received'] },
+				{ id: 'wh_elsewhere', url: 'https://other.example.com/hook', events: ['message.received'] },
+			],
+			staticData,
+		});
+		expect(await methods.checkExists.call(ctx as never)).toBe(false);
+		expect(calls.filter((c) => c.method === 'DELETE').map((c) => c.path)).toEqual(['/v1/webhooks/wh_a', '/v1/webhooks/wh_b']);
+	});
+
+	it('our endpoint, switched off by the app after failed deliveries, is switched back on', async () => {
+		const staticData: Record<string, unknown> = { webhookId: 'wh_mine', secret: 's' };
+		const { ctx, calls } = hookCtx({
+			endpoints: [{ id: 'wh_mine', url: URL_, events: ['message.received'], enabled: false }],
+			staticData,
+		});
+		expect(await methods.checkExists.call(ctx as never)).toBe(true);
+		expect(calls).toContainEqual({ method: 'PATCH', path: '/v1/webhooks/wh_mine', body: { enabled: true } });
 	});
 });

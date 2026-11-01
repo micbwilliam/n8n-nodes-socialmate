@@ -146,9 +146,9 @@ export class SocialMateTrigger implements INodeType {
 					id: string;
 					url: string;
 					events?: string[];
+					enabled?: boolean;
 				}>;
-				const existing = (endpoints ?? []).find((e) => e.url === webhookUrl);
-				if (!existing) return false;
+				const matching = (Array.isArray(endpoints) ? endpoints : []).filter((e) => e.url === webhookUrl);
 
 				// Ours only if WE created it: same id, and we still hold its signing
 				// secret. An endpoint that merely has our URL — one the app's n8n
@@ -156,22 +156,36 @@ export class SocialMateTrigger implements INodeType {
 				// app was closed — has a secret we never saw, so adopting it would
 				// switch HMAC verification off without telling anyone, and keep that
 				// endpoint's event list instead of this node's.
-				if (staticData.secret && existing.id === staticData.webhookId) {
+				const ours = staticData.secret ? matching.find((e) => e.id === staticData.webhookId) : undefined;
+
+				// Every other endpoint at our URL goes, even when ours exists: with
+				// Verify Signature off each one would start this workflow a second
+				// time per event; with it on each one is a stream of rejected
+				// deliveries that also counts against Free's endpoint cap.
+				for (const stray of matching) {
+					if (stray === ours) continue;
+					try {
+						await socialmateApiRequest.call(this, 'DELETE', `/v1/webhooks/${stray.id}`);
+					} catch {
+						// Best-effort — create() still registers our own endpoint.
+					}
+				}
+
+				if (ours) {
 					const events = this.getNodeParameter('events', []) as string[];
-					const current = existing.events ?? [];
-					const same = current.length === events.length && events.every((e) => current.includes(e));
-					if (!same) {
-						await socialmateApiRequest.call(this, 'PATCH', `/v1/webhooks/${existing.id}`, { events });
+					const current = ours.events ?? [];
+					const patch: IDataObject = {};
+					if (current.length !== events.length || !events.every((e) => current.includes(e))) patch.events = events;
+					// The app switches an endpoint off after repeated failed deliveries
+					// (n8n was down). Activating the workflow means "deliver to me".
+					if (ours.enabled === false) patch.enabled = true;
+					if (Object.keys(patch).length) {
+						await socialmateApiRequest.call(this, 'PATCH', `/v1/webhooks/${ours.id}`, patch);
 					}
 					return true;
 				}
 
-				// Replace it: create() registers a fresh secret and the current events.
-				try {
-					await socialmateApiRequest.call(this, 'DELETE', `/v1/webhooks/${existing.id}`);
-				} catch {
-					// Best-effort — create() still registers our own endpoint.
-				}
+				// create() registers a fresh secret and the current events.
 				delete staticData.webhookId;
 				delete staticData.secret;
 				return false;

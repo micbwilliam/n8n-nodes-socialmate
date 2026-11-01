@@ -75,7 +75,10 @@ Every new operation and event is Pro; a Free server answers `402`.
   verification off and kept the old event list. Such an endpoint is now replaced with a fresh one
   (new secret, this node's events); the Trigger's own endpoint is re-pointed when the Events
   selection changed. With **Verify Signature** on and no stored secret, deliveries are refused
-  (`401 no_signing_secret`) instead of accepted unchecked.
+  (`401 no_signing_secret`) instead of accepted unchecked. Every other endpoint at the Trigger's
+  URL is removed too, even when the Trigger's own one exists (with Verify Signature off each would
+  start the workflow a second time per event), and an endpoint the app switched off after failed
+  deliveries is switched back on when the workflow activates.
 - On Free, the Trigger's Events help and the README now say what happens: picking a `(Pro)` event
   makes activation fail with a "requires Pro" error naming the event, and Free has 2 webhook
   endpoints in total (a "Listen for test event" listener takes one).
