@@ -78,7 +78,7 @@
       },
       "id": "aa555555-5555-4555-8555-555555555555",
       "name": "Get Conversation Memory",
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         520,
@@ -96,7 +96,7 @@
       },
       "id": "aa666666-6666-4666-8666-666666666666",
       "name": "Look Up Contact",
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         700,
@@ -111,7 +111,7 @@
         "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
         "text": "={{ $json.output }}",
         "sendOptions": {
-          "replyTo": "={{ $('SocialMate Trigger').item.json.body.data.messageId }}"
+          "replyTo": "={{ $('SocialMate Trigger').item.json.data.messageId }}"
         }
       },
       "id": "aa777777-7777-4777-8777-777777777777",
@@ -142,10 +142,11 @@
       "parameters": {
         "resource": "message",
         "operation": "markRead",
-        "chatId": "={{ $('SocialMate Trigger').item.json.body.data.chatId }}",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
         "messageIds": ""
       },
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         -60,
@@ -158,10 +159,11 @@
       "parameters": {
         "resource": "message",
         "operation": "sendTyping",
-        "chatId": "={{ $('SocialMate Trigger').item.json.body.data.chatId }}",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
         "presenceState": "composing"
       },
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         160,
@@ -174,11 +176,12 @@
       "parameters": {
         "resource": "message",
         "operation": "react",
-        "chatId": "={{ $('SocialMate Trigger').item.json.body.data.chatId }}",
-        "messageId": "={{ $('SocialMate Trigger').item.json.body.data.messageId }}",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+        "messageId": "={{ $('SocialMate Trigger').item.json.data.messageId }}",
         "emoji": "={{ $fromAI(\"emoji\", \"A single emoji to react with\", \"string\") }}"
       },
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         380,
@@ -191,13 +194,14 @@
       "parameters": {
         "resource": "message",
         "operation": "sendPoll",
-        "chatId": "={{ $('SocialMate Trigger').item.json.body.data.chatId }}",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
         "pollName": "={{ $fromAI(\"question\", \"The poll question\", \"string\") }}",
         "pollOptions": "={{ $fromAI(\"options\", \"Comma-separated answer options, 2 to 12\", \"string\") }}",
         "pollSelectableCount": 1,
         "sendOptions": {}
       },
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         600,
@@ -209,9 +213,10 @@
     {
       "parameters": {
         "resource": "account",
-        "operation": "getAntiBan"
+        "operation": "getAntiBan",
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}"
       },
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         820,
@@ -222,7 +227,7 @@
     },
     {
       "name": "Search History",
-      "type": "n8n-nodes-socialmate.socialMate",
+      "type": "n8n-nodes-socialmate.socialMateTool",
       "typeVersion": 1,
       "position": [
         1420,
@@ -231,7 +236,13 @@
       "parameters": {
         "resource": "message",
         "operation": "search",
-        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}"
+        "accountId": "={{ $('SocialMate Trigger').item.json.data.accountId }}",
+        "searchFilters": {
+          "chatId": "={{ $('SocialMate Trigger').item.json.data.chatId }}",
+          "search": "={{ $fromAI('search_text', 'Words to find in this chat history, e.g. an invoice number or a product name', 'string') }}"
+        },
+        "returnAll": false,
+        "limit": 20
       }
     }
   ],

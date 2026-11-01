@@ -33,7 +33,7 @@ name you give it**, so name them exactly as the prompt refers to them:
 
 Put the **SocialMate Trigger** in front (event `message.received`) and a
 **Message → Send Text** node after the Agent, mapping `replyTo` to the incoming
-`{{ $('SocialMate Trigger').item.json.body.data.messageId }}` so the reply is threaded.
+`{{ $('SocialMate Trigger').item.json.data.messageId }}` so the reply is threaded.
 
 **Attach nothing administrative.** Never wire an **API Key**, **Webhook**, or **Media →
 Delete / Run Cleanup** node to the Agent's Tool input. Each node you attach is one tool the

@@ -33,6 +33,17 @@ Every new operation and event is Pro; a Free server answers `402`.
 - The scheduled-reminders example is renamed `examples/scheduled-bulk-send.json` →
   `examples/scheduled-batch-send.json` (same workflow; "batch" is the product's word for it).
 
+### Fixed
+- **The AI-agent examples run.** `examples/ai-agent-tool.json` and `examples/mcp-server-trigger.json`
+  wired the plain `socialMate` node into the agent's Tool input, so every run failed with "Node does
+  not have a `supplyData` method defined". Tool nodes are now `socialMateTool` — the variant n8n
+  generates for a `usableAsTool` node (in the editor: **SocialMate Tool**).
+- The flagship agent example (and `docs/AI-AGENT-SYSTEM-PROMPT.md`) read
+  `$('SocialMate Trigger').item.json.body.data.*`. The Trigger emits the delivered payload itself —
+  there is no `body` key — so the threaded reply, Mark Read, Show Typing, React and Send Poll all
+  failed. They read `item.json.data.*` now; every tool node also takes the account from the
+  Trigger, and Search History searches the current chat for words the agent chooses.
+
 ## [2.7.1] — 2026-07-14
 
 Documentation-only release — no operation, endpoint or event behaviour changed. A pre-launch audit
