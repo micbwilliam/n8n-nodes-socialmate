@@ -311,8 +311,10 @@ export class SocialMate implements INodeType {
 						}
 					}
 					// Signal lane — no chat bubble, no send budget, no risk impact.
-					// A 429 here means the independent signal limiter, not the message
-					// rate limiter, so it is never a `SocialMateBlockedError`.
+					// A 429 here is the independent signal limiter
+					// (`reason:'signal_rate_limit'`), not the message rate limiter: the
+					// request layer waits out a short one and retries; an hourly/daily
+					// cap fails the item with the server's "try again in Ns" message.
 					else if (operation === 'react') {
 						const chatId = normalizeChatId(this.getNodeParameter('chatId', i) as string);
 						const messageId = this.getNodeParameter('messageId', i) as string;

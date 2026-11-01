@@ -26,6 +26,10 @@ Every new operation and event is Pro; a Free server answers `402`.
   `/v1/connectors/wordpress*`) sit in a commented exemption list, checked so it cannot go stale —
   "node ⊇ app" still fails on any new, unlisted endpoint.
 - Wire-shape tests for every Agent operation (`test/unit/agent-execute.test.ts`).
+- Error tests run against the error n8n really throws (a `NodeApiError` wrapping an AxiosError,
+  in both the current shape and the `cause`-preserving one) and serve the app's real error bodies
+  from `test/fixtures/api-error-envelopes.ts`, each copied from its `reply.code(N).send` in the
+  app's `api-server.ts`.
 - `test/unit/examples.test.ts` validates every `examples/*.json`: it parses, every node type exists
   (this package or n8n core), only Tool types feed an AI tool input, resources/operations/parameters
   are real, and every Trigger expression resolves against the payload the app sends
@@ -38,6 +42,24 @@ Every new operation and event is Pro; a Free server answers `402`.
   `examples/scheduled-batch-send.json` (same workflow; "batch" is the product's word for it).
 
 ### Fixed
+- **Error handling works inside real n8n.** n8n wraps every failed request in a `NodeApiError`
+  whose status survives only as the string `httpCode` and whose body survives only as
+  `context.data` — the node read `statusCode` / `response.body` and saw nothing. So an anti-ban
+  block (e.g. the new-number warming cap) failed the workflow with "The service is receiving too
+  many requests from you" instead of returning `{ blocked: true }`, per-key 429s were never
+  retried, and 402/403 lost the feature and scope names. All of it now reads one normalised
+  error (status, body, headers) and builds its own `NodeApiError`, so the messages survive.
+- A **403** says what the server said. Only `insufficient_scope` is reported as a missing scope;
+  batch sending switched off (`bulk_import_disabled`), not a group admin (`group_forbidden`), a key
+  scoped to another account and a key whose accounts are suspended on Free surface the app's own
+  message and error code. The 401/403 hints point at **API & Integrations**.
+- A **402** includes the server's message — e.g. "These webhook events require Pro:
+  message.delivered" instead of only `feature: webhookMaxEndpoints`.
+- Other errors with a SocialMate message (e.g. `409 Account is not connected`) show it instead of
+  n8n's generic status text; "Cannot reach the SocialMate server" fires for a refused connection.
+- A **signal-lane 429** (React / Mark Read / Send Typing, `reason: signal_rate_limit`) is retried
+  after its short `retryAfterMs` instead of failing the item; an hourly/daily signal cap still
+  fails fast with the server's "try again in Ns" message.
 - `npm run test:live` printed `(?)` for the first account: it read `state`; the list returns `status`.
 - **The AI-agent examples run.** `examples/ai-agent-tool.json` and `examples/mcp-server-trigger.json`
   wired the plain `socialMate` node into the agent's Tool input, so every run failed with "Node does

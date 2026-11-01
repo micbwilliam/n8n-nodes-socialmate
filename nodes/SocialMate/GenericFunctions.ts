@@ -78,99 +78,212 @@ function unwrapEnvelope(body: unknown): unknown {
 	return body;
 }
 
-/** Map a SocialMate / transport error to a clear n8n error. */
-function toNodeError(ctx: RequestContext, error: unknown): never {
-	const err = error as {
-		statusCode?: number;
-		httpCode?: number | string;
-		response?: { statusCode?: number; status?: number; body?: unknown; data?: unknown };
-		cause?: { code?: string };
-		code?: string;
-		message?: string;
-	};
-	const status =
-		err.statusCode ??
-		err.response?.statusCode ??
-		err.response?.status ??
-		(typeof err.httpCode === 'number' ? err.httpCode : Number(err.httpCode)) ??
-		0;
-	const rawBody = (err.response?.body ?? err.response?.data ?? {}) as IDataObject;
-	const inner = (rawBody.error ?? {}) as IDataObject;
-	const code = err.cause?.code ?? err.code;
-
-	if (code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
-		throw new NodeApiError(ctx.getNode(), error as JsonObject, {
-			message: 'Cannot reach the SocialMate server',
-			description:
-				'Check that SocialMate is running, the API is enabled, the tunnel is online, and the Server URL in your credential is correct.',
-		});
-	}
-	if (status === 401) {
-		throw new NodeApiError(ctx.getNode(), error as JsonObject, {
-			message: 'Authentication failed — invalid or missing API key',
-			description: 'Generate a key in SocialMate → Settings → API and update the credential.',
-		});
-	}
-	if (status === 402) {
-		const feature = (inner.feature as string) ?? 'this feature';
-		throw new NodeApiError(ctx.getNode(), error as JsonObject, {
-			message: `This operation requires SocialMate Pro (feature: ${feature})`,
-			description: 'Upgrade to Pro in the SocialMate app, or use a Free-tier operation.',
-		});
-	}
-	if (status === 403) {
-		const required = (rawBody.required as string) ?? (inner.required as string) ?? 'a higher';
-		throw new NodeApiError(ctx.getNode(), error as JsonObject, {
-			message: `API key is missing the '${required}' scope`,
-			description: 'Recreate the key in SocialMate → Settings → API with the required scope.',
-		});
-	}
-	throw new NodeApiError(ctx.getNode(), error as JsonObject);
+/** What the request layer needs to know about a failed request. */
+export interface SocialMateErrorInfo {
+	/** HTTP status, or 0 when no response arrived. */
+	status: number;
+	/** Network failure code (ECONNREFUSED, ENOTFOUND, …) when no response arrived. */
+	netCode?: string;
+	/** Parsed response body (`{}` when there was none, or it was not JSON). */
+	body: IDataObject;
+	/** The v1.1 error object, `body.error`, when it is an object (else `{}`). */
+	inner: IDataObject;
+	/** Response headers, lower-cased. Usually empty under real n8n (see below). */
+	headers: IDataObject;
 }
 
-/** Read a Retry-After value (seconds) or the body's retryAfterMs from a 429. */
-function getRetryDelayMs(error: unknown): number {
-	const err = error as { response?: { headers?: IDataObject; body?: IDataObject } };
-	const headers = err.response?.headers ?? {};
-	const retryAfter = (headers['retry-after'] ?? headers['Retry-After']) as string | undefined;
-	if (retryAfter && !Number.isNaN(Number(retryAfter))) return Math.max(1, Number(retryAfter)) * 1000;
-	const inner = (err.response?.body?.error ?? {}) as IDataObject;
-	const ms = inner.retryAfterMs as number | undefined;
-	if (typeof ms === 'number' && ms > 0) return ms;
-	return 2000;
+export function asObject(value: unknown): IDataObject | undefined {
+	if (value && typeof value === 'object' && !Array.isArray(value) && !Buffer.isBuffer(value)) return value as IDataObject;
+	if (typeof value === 'string' && value.trim().startsWith('{')) {
+		try {
+			return asObject(JSON.parse(value));
+		} catch {
+			return undefined;
+		}
+	}
+	return undefined;
 }
 
-/** Extract an HTTP status from an n8n/undici error, or 0. */
-function getErrorStatus(error: unknown): number {
-	return (
-		(error as { statusCode?: number }).statusCode ??
-		(error as { response?: { statusCode?: number } }).response?.statusCode ??
-		0
-	);
+function asStatus(value: unknown): number {
+	const n = typeof value === 'number' ? value : typeof value === 'string' && /^\d{3}$/.test(value) ? Number(value) : 0;
+	return n >= 100 && n <= 599 ? n : 0;
 }
 
 /**
- * If a 429 is an anti-ban send block (its wrapped error carries a `reason`),
- * return the block detail; otherwise null (a transient per-key rate limit,
- * which IS retryable). Both share HTTP 429, but only the anti-ban block carries
- * `reason`/`upgrade` — the per-key limiter is `{ code:'rate_limited' }` with no
- * `reason`.
+ * Read status, body and headers out of whatever `httpRequestWithAuthentication`
+ * threw.
+ *
+ * Real n8n (n8n-core `request-helpers/authentication.js`) never lets the raw
+ * AxiosError through: it throws `new NodeApiError(node, axiosError)`. On current
+ * n8n that wrapper has no `statusCode`, no `response` and no `cause` (the class
+ * field shadows the native one): the status survives only as the STRING
+ * `httpCode` ("429" — or "ECONNREFUSED" when nothing answered), the JSON body
+ * only as `context.data`, and the headers not at all. Some builds keep the
+ * AxiosError on `cause`, and older request helpers threw `{ statusCode,
+ * response: { body } }` / `{ error: body }`. Every shape is read here, once, so
+ * the classification below never silently sees status 0 and an empty body.
  */
-function parseAntiBanBlock(error: unknown): {
+export function readSocialMateError(error: unknown): SocialMateErrorInfo {
+	type Loose = {
+		statusCode?: unknown;
+		status?: unknown;
+		httpCode?: unknown;
+		code?: unknown;
+		error?: unknown;
+		response?: { status?: unknown; statusCode?: unknown; data?: unknown; body?: unknown; headers?: unknown };
+		cause?: unknown;
+		errorResponse?: unknown;
+		context?: { data?: unknown };
+	};
+	const top = (error ?? {}) as Loose;
+	const layers = [top, top.cause, top.errorResponse].filter(
+		(l): l is Loose => !!l && typeof l === 'object',
+	);
+
+	let status = 0;
+	let body: IDataObject | undefined;
+	let headers: IDataObject | undefined;
+	let netCode: string | undefined;
+	for (const layer of layers) {
+		const res = layer.response && typeof layer.response === 'object' ? layer.response : undefined;
+		status ||= asStatus(res?.status) || asStatus(res?.statusCode) || asStatus(layer.statusCode) || asStatus(layer.status);
+		body ??= asObject(res?.data) ?? asObject(res?.body) ?? asObject(layer.error);
+		headers ??= asObject(res?.headers);
+		if (!netCode && typeof layer.code === 'string' && /^E[A-Z_]+$/.test(layer.code) && !layer.code.startsWith('ERR_')) {
+			netCode = layer.code;
+		}
+	}
+	if (typeof top.httpCode === 'string' || typeof top.httpCode === 'number') {
+		const fromHttpCode = asStatus(String(top.httpCode));
+		if (!status && fromHttpCode) status = fromHttpCode;
+		else if (!fromHttpCode && typeof top.httpCode === 'string' && /^E[A-Z_]+$/.test(top.httpCode)) netCode ??= top.httpCode;
+	}
+	body ??= asObject(top.context?.data) ?? {};
+
+	const lowered: IDataObject = {};
+	for (const [k, v] of Object.entries(headers ?? {})) lowered[k.toLowerCase()] = v;
+
+	return {
+		status,
+		netCode: status ? undefined : netCode,
+		body,
+		inner: asObject(body.error) ?? {},
+		headers: lowered,
+	};
+}
+
+/**
+ * Throw a NodeApiError carrying OUR message. It has to be built from a plain
+ * object: `new NodeApiError(node, err, { message })` returns `err` untouched
+ * when `err` is already a NodeApiError — which, under real n8n, it always is —
+ * so the custom message would be dropped and the user would see n8n's generic
+ * "Forbidden - perhaps check your credentials?".
+ */
+function throwApiError(ctx: RequestContext, info: SocialMateErrorInfo, message: string, description?: string): never {
+	const httpCode = info.status ? String(info.status) : undefined;
+	const code = typeof info.inner.code === 'string' ? info.inner.code : undefined;
+	throw new NodeApiError(
+		ctx.getNode(),
+		{ message, ...(description ? { description } : {}), ...(code ? { code } : {}), ...(httpCode ? { httpCode } : {}) } as JsonObject,
+		{ message, description, ...(httpCode ? { httpCode } : {}) },
+	);
+}
+
+/** Map a SocialMate / transport error to a clear n8n error. */
+function toNodeError(ctx: RequestContext, error: unknown, info: SocialMateErrorInfo = readSocialMateError(error)): never {
+	const { status, inner, body } = info;
+	const serverMessage =
+		(typeof inner.message === 'string' && inner.message) || (typeof body.error === 'string' && body.error) || '';
+	const errCode = typeof inner.code === 'string' ? inner.code : undefined;
+
+	if (info.netCode === 'ECONNREFUSED' || info.netCode === 'ENOTFOUND' || info.netCode === 'EAI_AGAIN') {
+		throwApiError(
+			ctx,
+			info,
+			'Cannot reach the SocialMate server',
+			'Check that SocialMate is running, the API is enabled, the tunnel is online, and the Server URL in your credential is correct.',
+		);
+	}
+	if (status === 401) {
+		throwApiError(
+			ctx,
+			info,
+			'Authentication failed — invalid or missing API key',
+			'Generate a key in SocialMate → API & Integrations and update the credential.',
+		);
+	}
+	if (status === 402) {
+		const feature = (inner.feature as string) ?? 'this feature';
+		// Say WHAT needs Pro. The server's message names it ("These webhook events
+		// require Pro: message.delivered"); the feature key alone can mislead
+		// (`webhookMaxEndpoints` also gates which events a Free trigger may pick).
+		const generic = `Feature '${feature}' requires a Pro license`;
+		throwApiError(
+			ctx,
+			info,
+			serverMessage && serverMessage !== generic
+				? `SocialMate Pro required (feature: ${feature}): ${serverMessage}`
+				: `This operation requires SocialMate Pro (feature: ${feature})`,
+			'Upgrade to Pro in the SocialMate app, or use a Free-tier option.',
+		);
+	}
+	if (status === 403) {
+		// Only `insufficient_scope` is about the key's scope. Every other 403 —
+		// batch sending switched off, not a group admin, a key scoped to another
+		// account, every scoped account suspended on Free — carries its own
+		// server message, which says what to do; recreating the key fixes none.
+		const required = (inner.required as string) ?? (body.required as string);
+		if (errCode === 'insufficient_scope' || (!errCode && required)) {
+			throwApiError(
+				ctx,
+				info,
+				`API key is missing the '${required ?? 'a higher'}' scope`,
+				'Recreate the key in SocialMate → API & Integrations with the required scope.',
+			);
+		}
+		throwApiError(
+			ctx,
+			info,
+			serverMessage || 'SocialMate refused this request (403)',
+			errCode ? `SocialMate error code: ${errCode}` : undefined,
+		);
+	}
+	if (serverMessage) {
+		const hint = typeof inner.hint === 'string' ? inner.hint : '';
+		const parts = [hint, errCode ? `SocialMate error code: ${errCode}` : ''].filter((p) => p);
+		throwApiError(ctx, info, serverMessage, parts.length ? parts.join(' — ') : undefined);
+	}
+	if (error instanceof NodeApiError) throw error;
+	throw new NodeApiError(ctx.getNode(), error as JsonObject);
+}
+
+/** The wait a retryable 429 asks for: body `retryAfterMs` (exact), then Retry-After (seconds), then 2s. */
+function getRetryDelayMs(info: SocialMateErrorInfo): number {
+	const ms = info.inner.retryAfterMs;
+	if (typeof ms === 'number' && ms > 0) return ms;
+	const retryAfter = info.headers['retry-after'] as string | undefined;
+	if (retryAfter && !Number.isNaN(Number(retryAfter))) return Math.max(1, Number(retryAfter)) * 1000;
+	return 2000;
+}
+
+/**
+ * If a 429 is an anti-ban block (its wrapped error carries a `reason`), return
+ * the block detail; otherwise null (the transient per-key rate limiter,
+ * `{ code:'rate_limited' }` with no `reason`, which IS retryable).
+ */
+function parseAntiBanBlock(info: SocialMateErrorInfo): {
 	reason: string;
 	retryAfterMs: number | null;
 	hint?: string;
 	upgrade?: unknown;
 	message: string;
 } | null {
-	const err = error as { response?: { body?: IDataObject; data?: IDataObject } };
-	const body = (err.response?.body ?? err.response?.data ?? {}) as IDataObject;
-	const inner = ((body.error ?? body) as IDataObject) ?? {};
+	const inner = Object.keys(info.inner).length ? info.inner : info.body;
 	const reason = inner.reason;
 	if (typeof reason !== 'string' || reason === '') return null;
 	const message =
 		(typeof inner.message === 'string' && inner.message) ||
-		(typeof body.error === 'string' && body.error) ||
+		(typeof info.body.error === 'string' && info.body.error) ||
 		'Send blocked by anti-ban protection';
 	return {
 		reason,
@@ -233,23 +346,31 @@ export async function socialmateApiRequest(
 			if (options.encoding) return response; // raw binary buffer
 			return options.returnEnvelope ? response : unwrapEnvelope(response);
 		} catch (error) {
-			if (getErrorStatus(error) === 429) {
-				// A 429 is one of two very different things:
+			const info = readSocialMateError(error);
+			if (info.status === 429) {
+				// A 429 is one of three different things:
 				//  • an anti-ban SEND BLOCK (carries `reason`/`upgrade`) — the send
 				//    was refused, so retrying is wrong; blindly sleeping its
 				//    Retry-After (hours for `night_mode`) would hang the run. Surface
 				//    it so the Message op can branch on it.
+				//  • a SIGNAL-lane limit (`reason:'signal_rate_limit'`, react / mark
+				//    read / typing) — nothing was refused for good and the message
+				//    budget is untouched, so a short wait is retried like the
+				//    per-key limiter. An hourly/daily signal cap (a wait longer
+				//    than the retry cap) still fails fast instead of hanging.
 				//  • the transient per-key RATE LIMITER (`code:'rate_limited'`, no
 				//    `reason`) — genuinely retryable, with a capped backoff.
-				const block = parseAntiBanBlock(error);
-				if (block) throw new SocialMateBlockedError(block);
+				const block = parseAntiBanBlock(info);
+				const retryableSignal =
+					block?.reason === 'signal_rate_limit' && (block.retryAfterMs ?? 0) <= MAX_RETRY_SLEEP_MS;
+				if (block && !retryableSignal) throw new SocialMateBlockedError(block);
 				if (attempt < MAX_RATE_LIMIT_RETRIES) {
 					attempt += 1;
-					await sleep(Math.min(getRetryDelayMs(error), MAX_RETRY_SLEEP_MS));
+					await sleep(Math.min(getRetryDelayMs(info), MAX_RETRY_SLEEP_MS));
 					continue;
 				}
 			}
-			toNodeError(this, error);
+			toNodeError(this, error, info);
 		}
 	}
 }

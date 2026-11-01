@@ -1,5 +1,6 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'http';
 import type { AddressInfo } from 'net';
+import { API_ERRORS, type ApiErrorName, type ErrorEnvelopeFixture } from '../fixtures/api-error-envelopes';
 
 /**
  * A tiny in-process mock of the SocialMate (SM4) API that reproduces the parts
@@ -13,8 +14,13 @@ import type { AddressInfo } from 'net';
  *    that IS retryable,
  *  • an offset/limit paginated list (`/v1/queue/items`) vs a bare, NON-paginated
  *    array (`/v1/queue/batches`) — the shape that used to hang the pager,
- *  • a 402 Pro-gate.
+ *  • a 402 Pro-gate,
+ *  • `/v1/__error__/<name>[?times=N]` — any reply from `API_ERRORS` (copied
+ *    from the app's real error replies), for the first N hits (default: every
+ *    hit), then a 200 `{ recovered: true }`.
  *
+ * Every error body comes from `test/fixtures/api-error-envelopes.ts`, never
+ * from a shape written here.
  * It records how many requests each path received so tests can prove the node
  * did (or did NOT) retry.
  */
@@ -79,7 +85,12 @@ function ok(res: ServerResponse, data: unknown, status = 200): void {
 	sendJson(res, status, { data });
 }
 
-/** v1.1 error envelope: `{ error: { code, message, ...extra } }`. */
+/** Serve one of the app's real error replies. */
+function fixture(res: ServerResponse, f: ErrorEnvelopeFixture): void {
+	sendJson(res, f.status, f.body, f.headers ?? {});
+}
+
+/** v1.1 error envelope: `{ error: { code, message, ...extra } }` (404 fallback only). */
 function err(
 	res: ServerResponse,
 	status: number,
@@ -114,20 +125,9 @@ function route(
 		if (text === '__BLOCK_NIGHT__') {
 			// Anti-ban block — huge Retry-After (as `night_mode` would be). The
 			// node MUST surface this as SocialMateBlockedError and NOT sleep-retry.
-			return err(
-				res,
-				429,
-				'rate_limited',
-				'Sending is paused during quiet hours',
-				{
-					reason: 'night_mode',
-					retryAfterMs: 3_600_000,
-					hint: 'Upgrade to Pro to auto-queue this send and deliver it when quiet hours end.',
-					upgrade: { tier: 'pro', feature: 'apiSmartQueue' },
-				},
-				{ 'retry-after': '3600' },
-			);
+			return fixture(res, API_ERRORS.antiBanNightMode);
 		}
+		if (text === '__BLOCK_WARMING__') return fixture(res, API_ERRORS.antiBanWarming);
 		if (text === '__QUEUE__') {
 			return ok(res, { queued: true, itemId: 'q-1', reason: 'rate_limit', retryAfterMs: 30_000, priority: 2 }, 202);
 		}
@@ -139,14 +139,22 @@ function route(
 	if (method === 'GET' && path === '/v1/__ratelimited__') {
 		const hits = counts['GET /v1/__ratelimited__'];
 		if (hits <= 2) {
-			return err(res, 429, 'rate_limited', 'Per-key request rate exceeded', { retryAfterMs: 5 });
+			return fixture(res, API_ERRORS.perKeyRateLimited);
 		}
 		return ok(res, { recovered: true, hits });
 	}
 
 	// ── 402 Pro gate ────────────────────────────────────────────────────────
 	if (method === 'GET' && path === '/v1/__pro__') {
-		return err(res, 402, 'license_required', 'This feature requires Pro', { feature: 'localMessageCache', tier: 'pro' });
+		return fixture(res, API_ERRORS.licenseRequired);
+	}
+
+	// ── Any real error reply, for the first `times` hits ────────────────────
+	const errorRoute = /^\/v1\/__error__\/([A-Za-z]+)$/.exec(path);
+	if (errorRoute && errorRoute[1] in API_ERRORS) {
+		const times = Number(parsed.searchParams.get('times') ?? 'Infinity');
+		if (counts[`${method} ${path}`] <= times) return fixture(res, API_ERRORS[errorRoute[1] as ApiErrorName]);
+		return ok(res, { recovered: true, hits: counts[`${method} ${path}`] });
 	}
 
 	// ── Paginated list (offset/limit + pagination.total) ────────────────────
