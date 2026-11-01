@@ -71,7 +71,7 @@ await step('GET /v1/accounts', async () => {
 	const accounts = unwrap(json) || [];
 	if (!accounts.length) throw new Error('no accounts in this key’s scope');
 	accountId = accounts[0].id;
-	return `first account = ${accountId} (${accounts[0].state ?? '?'})`;
+	return `first account = ${accountId} (${accounts[0].status ?? accounts[0].state ?? '?'})`;
 });
 
 await step('GET /v1/accounts/:id/chats', async () => {

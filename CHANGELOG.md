@@ -26,6 +26,10 @@ Every new operation and event is Pro; a Free server answers `402`.
   `/v1/connectors/wordpress*`) sit in a commented exemption list, checked so it cannot go stale —
   "node ⊇ app" still fails on any new, unlisted endpoint.
 - Wire-shape tests for every Agent operation (`test/unit/agent-execute.test.ts`).
+- `test/unit/examples.test.ts` validates every `examples/*.json`: it parses, every node type exists
+  (this package or n8n core), only Tool types feed an AI tool input, resources/operations/parameters
+  are real, and every Trigger expression resolves against the payload the app sends
+  (`test/fixtures/webhook-message-received.ts`).
 
 ### Changed
 - README: Agent row in the Free-vs-Pro table, agent events in the event list, Agent scopes in the
@@ -34,6 +38,7 @@ Every new operation and event is Pro; a Free server answers `402`.
   `examples/scheduled-batch-send.json` (same workflow; "batch" is the product's word for it).
 
 ### Fixed
+- `npm run test:live` printed `(?)` for the first account: it read `state`; the list returns `status`.
 - **The AI-agent examples run.** `examples/ai-agent-tool.json` and `examples/mcp-server-trigger.json`
   wired the plain `socialMate` node into the agent's Tool input, so every run failed with "Node does
   not have a `supplyData` method defined". Tool nodes are now `socialMateTool` — the variant n8n
