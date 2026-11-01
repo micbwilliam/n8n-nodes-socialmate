@@ -44,6 +44,11 @@ Every new operation and event is Pro; a Free server answers `402`.
   `examples/scheduled-batch-send.json` (same workflow; "batch" is the product's word for it).
 
 ### Fixed
+- **An invalid Scheduled At no longer sends immediately.** On Queue: **Enqueue** and **Queue a
+  Batch**, a Scheduled At that did not parse as a date-time was sent as `scheduledAt: null` — "as
+  soon as possible" — so a mistyped schedule went out at once. The item now fails with "Scheduled
+  At is not a valid date-time" and nothing is queued. An empty Scheduled At still means as soon as
+  possible.
 - **Error handling works inside real n8n.** n8n wraps every failed request in a `NodeApiError`
   whose status survives only as the string `httpCode` and whose body survives only as
   `context.data` — the node read `statusCode` / `response.body` and saw nothing. So an anti-ban

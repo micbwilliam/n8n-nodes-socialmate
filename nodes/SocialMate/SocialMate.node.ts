@@ -167,6 +167,15 @@ export class SocialMate implements INodeType {
 
 		for (let i = 0; i < items.length; i++) {
 			try {
+				// Scheduled At: empty = as soon as possible (null); a value that does not
+				// parse must fail the item, never degrade to null — that would send NOW.
+				const scheduledAtMs = (value: unknown): number | null => {
+					const ms = toUnixMs(value);
+					if (ms === null && value) {
+						throw new NodeOperationError(this.getNode(), 'Scheduled At is not a valid date-time', { itemIndex: i });
+					}
+					return ms;
+				};
 				const acc = (): string => {
 					const explicit = (this.getNodeParameter('accountId', i, '') as string) || '';
 					if (explicit) return explicit;
@@ -463,7 +472,7 @@ export class SocialMate implements INodeType {
 						if (opts.displayName) body.displayName = opts.displayName;
 						if (opts.priority !== undefined) body.priority = opts.priority;
 						if (opts.maxRetries !== undefined) body.maxRetries = opts.maxRetries;
-						body.scheduledAt = toUnixMs(opts.scheduledAt);
+						body.scheduledAt = scheduledAtMs(opts.scheduledAt);
 						responseData = await socialmateApiRequest.call(this, 'POST', `/v1/accounts/${acc()}/queue/items`, body);
 					} else if (operation === 'import') {
 						const opts = this.getNodeParameter('importOptions', i, {}) as IDataObject;
@@ -472,7 +481,7 @@ export class SocialMate implements INodeType {
 						const body: IDataObject = {
 							template: this.getNodeParameter('template', i) as string,
 							rows,
-							scheduledAt: toUnixMs(opts.scheduledAt),
+							scheduledAt: scheduledAtMs(opts.scheduledAt),
 						};
 						if (opts.batchName) body.batchName = opts.batchName;
 						if (opts.priority !== undefined) body.priority = opts.priority;
