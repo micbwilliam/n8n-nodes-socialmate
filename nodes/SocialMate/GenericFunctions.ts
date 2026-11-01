@@ -93,7 +93,9 @@ export interface SocialMateErrorInfo {
 }
 
 export function asObject(value: unknown): IDataObject | undefined {
-	if (value && typeof value === 'object' && !Array.isArray(value) && !Buffer.isBuffer(value)) return value as IDataObject;
+	// A binary request (Download File) gets its JSON error body as raw bytes.
+	if (Buffer.isBuffer(value) || value instanceof ArrayBuffer) return asObject(Buffer.from(value as Buffer).toString('utf8'));
+	if (value && typeof value === 'object' && !Array.isArray(value)) return value as IDataObject;
 	if (typeof value === 'string' && value.trim().startsWith('{')) {
 		try {
 			return asObject(JSON.parse(value));

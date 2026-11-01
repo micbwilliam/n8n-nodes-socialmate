@@ -129,6 +129,13 @@ describe.each(['n8n', 'cause'] as const)('error mapping (%s error shape)', (erro
 		expect(e.message).toBe('Account is not connected');
 	});
 
+	it('a binary download (Download File) still surfaces the JSON error body', async () => {
+		const e = await failure(
+			socialmateApiRequest.call(ctx() as never, 'GET', '/v1/__error__/accountNotConnected', {}, {}, { encoding: 'arraybuffer' }),
+		);
+		expect(e.message).toBe('Account is not connected');
+	});
+
 	it('an unreachable server maps to "Cannot reach the SocialMate server"', async () => {
 		const dead = makeFakeContext({ baseUrl: 'http://127.0.0.1:1', errorShape });
 		const e = await failure(socialmateApiRequest.call(dead as never, 'GET', '/v1/capabilities'));
