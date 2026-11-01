@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, readdirSync } from 'fs';
+import { dirname, join } from 'path';
 import type { INodeProperties, INodeTypeDescription } from 'n8n-workflow';
 import { SocialMate } from '../../nodes/SocialMate/SocialMate.node';
 import { SocialMateTrigger, EVENT_OPTIONS } from '../../nodes/SocialMateTrigger/SocialMateTrigger.node';
@@ -18,6 +18,7 @@ const PKG = 'n8n-nodes-socialmate';
 interface WfNode {
 	name: string;
 	type: string;
+	typeVersion?: number;
 	parameters: Record<string, unknown>;
 }
 interface Workflow {
@@ -110,6 +111,17 @@ describe.each(files)('examples/%s', (file) => {
 		expect(unknown).toEqual([]);
 	});
 
+	it('uses a typeVersion this package declares for its own nodes', () => {
+		const bad = wf.nodes
+			.filter((n) => PACKAGE_TYPES.has(n.type))
+			.filter((n) => {
+				const d = n.type === `${PKG}.${trigger.name}` ? trigger : action;
+				return !([] as number[]).concat(d.version).includes(n.typeVersion ?? 1);
+			})
+			.map((n) => `${n.name}: ${n.type} v${n.typeVersion}`);
+		expect(bad).toEqual([]);
+	});
+
 	it('connects only nodes that exist', () => {
 		const dangling: string[] = [];
 		for (const [src, outputs] of Object.entries(wf.connections)) {
@@ -186,6 +198,41 @@ describe.each(files)('examples/%s', (file) => {
 			}
 		}
 		expect(problems).toEqual([]);
+	});
+});
+
+/**
+ * CORE_TYPES is a hand-kept list. When an n8n install is reachable (the global
+ * one next to this Node binary, or N8N_NODE_MODULES=<n8n>/node_modules), check
+ * every core node an example uses against the node manifests n8n ships — the
+ * type must exist and the example's typeVersion must be one it accepts.
+ * Skipped (not failed) on machines without n8n, e.g. CI.
+ */
+const N8N_MODULES = process.env.N8N_NODE_MODULES ?? join(dirname(process.execPath), '..', 'lib', 'node_modules', 'n8n', 'node_modules');
+const MANIFESTS: Array<[pkg: string, file: string]> = [
+	['n8n-nodes-base', join(N8N_MODULES, 'n8n-nodes-base', 'dist', 'types', 'nodes.json')],
+	['@n8n/n8n-nodes-langchain', join(N8N_MODULES, '@n8n', 'n8n-nodes-langchain', 'dist', 'types', 'nodes.json')],
+];
+const haveN8n = MANIFESTS.every(([, m]) => existsSync(m));
+
+describe.skipIf(!haveN8n)('examples — against the installed n8n', () => {
+	it('every core node type and typeVersion exists in n8n', () => {
+		const versions = new Map<string, number[]>();
+		for (const [pkg, m] of MANIFESTS) {
+			for (const d of JSON.parse(readFileSync(m, 'utf8')) as Array<{ name: string; version: number | number[] }>) {
+				// The manifests list bare names ("webhook"); workflows use "<package>.<name>".
+				const type = d.name.includes('.') ? d.name : `${pkg}.${d.name}`;
+				versions.set(type, [...(versions.get(type) ?? []), ...([] as number[]).concat(d.version)]);
+			}
+		}
+		const bad: string[] = [];
+		for (const t of CORE_TYPES) if (!versions.has(t)) bad.push(`CORE_TYPES lists ${t}, which n8n does not have`);
+		for (const file of files) {
+			for (const n of load(file).nodes.filter((x) => CORE_TYPES.has(x.type))) {
+				if (!versions.get(n.type)?.includes(n.typeVersion ?? 1)) bad.push(`${file}: ${n.name} ${n.type} v${n.typeVersion}`);
+			}
+		}
+		expect(bad).toEqual([]);
 	});
 });
 

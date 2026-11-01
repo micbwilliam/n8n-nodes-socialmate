@@ -32,8 +32,10 @@ Every new operation and event is Pro; a Free server answers `402`.
   app's `api-server.ts`.
 - `test/unit/examples.test.ts` validates every `examples/*.json`: it parses, every node type exists
   (this package or n8n core), only Tool types feed an AI tool input, resources/operations/parameters
-  are real, and every Trigger expression resolves against the payload the app sends
-  (`test/fixtures/webhook-message-received.ts`).
+  are real, every node's typeVersion is one it accepts, and every Trigger expression resolves
+  against the payload the app sends (`test/fixtures/webhook-message-received.ts`). Where an n8n
+  install is reachable (global, or `N8N_NODE_MODULES`), the core node types and versions are also
+  checked against the manifests n8n ships.
 
 ### Changed
 - README: Agent row in the Free-vs-Pro table, agent events in the event list, Agent scopes in the
