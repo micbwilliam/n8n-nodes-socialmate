@@ -153,6 +153,17 @@ describe('credential Test — requires a real SocialMate handshake', () => {
 		});
 		expect(explicit.message).toMatch(/^This address answers plain HTTP/);
 		expect(explicit.message).toContain('Use http://127.0.0.1:3791.');
+
+		// A TLS handshake alert on a real HTTPS host is EPROTO too — not a plain-HTTP server.
+		const alert = Object.assign(
+			new Error('write EPROTO 00AD95DC1E710000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure'),
+			{ code: 'EPROTO' },
+		);
+		const handshake = await testSocialMateConnection('https://sm.example.com', 'k', async () => {
+			throw alert;
+		});
+		expect(handshake.message).not.toMatch(/plain HTTP/);
+		expect(handshake.message).toMatch(/^Cannot reach SocialMate at https:\/\/sm\.example\.com: /);
 	});
 
 	it('maps a refused connection', async () => {

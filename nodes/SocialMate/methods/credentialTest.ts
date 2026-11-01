@@ -12,11 +12,16 @@ type LegacyRequest = (options: IDataObject) => Promise<unknown>;
 const API_ROOT_HINT =
 	"Use the API address: http://127.0.0.1:3456 on the same machine, the server's public address (e.g. https://socialmate.example.com), or your named-tunnel hostname (Pro)";
 
-/** The TLS layer met a plain-HTTP answer (Node: EPROTO / "packet length too long" / "wrong version number"). */
+/**
+ * The TLS layer met a plain-HTTP answer ("packet length too long" / "wrong
+ * version number"). Not every EPROTO / ERR_SSL_*: a handshake alert or a
+ * certificate problem on a real HTTPS host also carries those codes, and
+ * telling that user to switch to http:// would be wrong.
+ */
 function isPlainHttpOnTls(error: unknown, code: string | undefined): boolean {
-	if (code === 'EPROTO' || (typeof code === 'string' && code.startsWith('ERR_SSL_'))) return true;
+	if (code === 'ERR_SSL_PACKET_LENGTH_TOO_LONG' || code === 'ERR_SSL_WRONG_VERSION_NUMBER') return true;
 	const message = String((error as { message?: unknown })?.message ?? '');
-	return /packet length too long|wrong version number|tls_get_more_records|ssl3_get_record/i.test(message);
+	return /packet length too long|wrong version number/i.test(message);
 }
 
 /**
