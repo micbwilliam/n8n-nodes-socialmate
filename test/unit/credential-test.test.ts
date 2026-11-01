@@ -18,6 +18,24 @@ function answering(statusCode: number, body: unknown): { calls: IDataObject[]; r
 	};
 }
 
+type Answer = { status: number; body: unknown } | Error;
+
+/** Answers per path: `/v1/capabilities` and the `/v1/webhooks` admin-scope probe. */
+function routed(answers: { capabilities?: Answer; webhooks?: Answer }): { calls: IDataObject[]; request: (o: IDataObject) => Promise<unknown> } {
+	const calls: IDataObject[] = [];
+	return {
+		calls,
+		request: async (o) => {
+			calls.push(o);
+			const a = String(o.uri).endsWith('/v1/webhooks')
+				? (answers.webhooks ?? { status: 200, body: { data: [] } })
+				: (answers.capabilities ?? { status: 200, body: CAPABILITIES });
+			if (a instanceof Error) throw a;
+			return { statusCode: a.status, body: a.body };
+		},
+	};
+}
+
 const CAPABILITIES = {
 	data: {
 		app: 'SocialMate',
@@ -63,11 +81,78 @@ describe('credential Test — requires a real SocialMate handshake', () => {
 	});
 
 	it('warns when the key cannot register the Trigger webhook (no admin scope)', async () => {
-		const caps = JSON.parse(JSON.stringify(CAPABILITIES));
-		caps.data.tools[1].available = false;
-		const res = await testSocialMateConnection('http://127.0.0.1:3456', 'k', answering(200, caps).request);
+		const res = await testSocialMateConnection('http://127.0.0.1:3456', 'k', routed({ webhooks: API_ERRORS.insufficientScope }).request);
 		expect(res.status).toBe('OK');
 		expect(res.message).toMatch(/no admin scope/);
+	});
+
+	it('warns on Free too, where every admin tool is also tier-gated in capabilities', async () => {
+		// The walkthrough case: a read+send key on Free. Every requiresAdminKey tool
+		// is feature-gated, so capabilities alone cannot tell scope from tier.
+		const caps = {
+			data: {
+				...CAPABILITIES.data,
+				features: { localMessageCache: false, scheduledMessages: false, apiWriteEnabled: false },
+				tools: [
+					{ name: 'send_text', available: true },
+					{ name: 'schedule_message', available: false, feature: 'scheduledMessages', requiresAdminKey: true },
+				],
+			},
+		};
+		const { calls, request } = routed({ capabilities: { status: 200, body: caps }, webhooks: API_ERRORS.insufficientScope });
+		const res = await testSocialMateConnection('http://127.0.0.1:3791', 'k', request);
+		expect(res.status).toBe('OK');
+		expect(res.message).toMatch(/no admin scope/);
+		expect(calls.map((c) => c.uri)).toEqual(['http://127.0.0.1:3791/v1/capabilities', 'http://127.0.0.1:3791/v1/webhooks']);
+		expect(calls[1].method).toBe('GET');
+	});
+
+	it('also reads the flat legacy 403 shape', async () => {
+		const flat = { status: 403, body: { error: 'insufficient_scope', message: "Key requires 'admin' scope", required: 'admin' } };
+		const res = await testSocialMateConnection('http://127.0.0.1:3456', 'k', routed({ webhooks: flat }).request);
+		expect(res.message).toMatch(/no admin scope/);
+	});
+
+	it('stays silent for an admin key, and when the probe cannot tell', async () => {
+		for (const webhooks of [
+			{ status: 200, body: { data: [] } },
+			{ status: 404, body: { error: { code: 'not_found', message: 'Route GET:/v1/webhooks not found' } } },
+			{ status: 403, body: { error: { code: 'account_scope_mismatch', message: 'nope' } } },
+			new Error('socket hang up'),
+		]) {
+			const res = await testSocialMateConnection('http://127.0.0.1:3456', 'k', routed({ webhooks }).request);
+			expect(res.status).toBe('OK');
+			expect(res.message).not.toMatch(/admin scope/);
+		}
+	});
+
+	it('names a trailing /v1 without calling the server', async () => {
+		const { calls, request } = answering(200, CAPABILITIES);
+		const res = await testSocialMateConnection('http://localhost:3791/v1/', 'k', request);
+		expect(res.status).toBe('Error');
+		expect(res.message).toMatch(/Remove \/v1/);
+		expect(res.message).toContain('http://localhost:3791.');
+		expect(calls).toHaveLength(0);
+	});
+
+	it('suggests http:// when https:// was assumed and the server speaks plain HTTP', async () => {
+		const tlsError = Object.assign(
+			new Error('00AD95DC1E710000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long'),
+			{ code: 'EPROTO' },
+		);
+		const res = await testSocialMateConnection('127.0.0.1:3791', 'k', async () => {
+			throw tlsError;
+		});
+		expect(res.status).toBe('Error');
+		expect(res.message).toMatch(/https:\/\/ was assumed/);
+		expect(res.message).toContain('Use http://127.0.0.1:3791.');
+		expect(res.message).not.toMatch(/SSL routines/);
+
+		const explicit = await testSocialMateConnection('https://127.0.0.1:3791', 'k', async () => {
+			throw new Error('write EPROTO ...:wrong version number');
+		});
+		expect(explicit.message).toMatch(/^This address answers plain HTTP/);
+		expect(explicit.message).toContain('Use http://127.0.0.1:3791.');
 	});
 
 	it('maps a refused connection', async () => {

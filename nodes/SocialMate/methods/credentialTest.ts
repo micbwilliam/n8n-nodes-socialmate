@@ -9,7 +9,15 @@ import { asObject, normalizeBaseUrl, readSocialMateError } from '../GenericFunct
 
 type LegacyRequest = (options: IDataObject) => Promise<unknown>;
 
-const API_ROOT_HINT = 'Use the API address, e.g. http://127.0.0.1:3456 or your named-tunnel hostname';
+const API_ROOT_HINT =
+	"Use the API address: http://127.0.0.1:3456 on the same machine, the server's public address (e.g. https://socialmate.example.com), or your named-tunnel hostname (Pro)";
+
+/** The TLS layer met a plain-HTTP answer (Node: EPROTO / "packet length too long" / "wrong version number"). */
+function isPlainHttpOnTls(error: unknown, code: string | undefined): boolean {
+	if (code === 'EPROTO' || (typeof code === 'string' && code.startsWith('ERR_SSL_'))) return true;
+	const message = String((error as { message?: unknown })?.message ?? '');
+	return /packet length too long|wrong version number|tls_get_more_records|ssl3_get_record/i.test(message);
+}
 
 /**
  * The credential "Test" button.
@@ -34,6 +42,12 @@ export async function testSocialMateConnection(
 		pathname = new URL(base).pathname;
 	} catch {
 		return { status: 'Error', message: `"${rawBaseUrl}" is not a valid URL. ${API_ROOT_HINT}.` };
+	}
+	if (/\/v1$/i.test(pathname)) {
+		return {
+			status: 'Error',
+			message: `Remove /v1 from the end of the Server URL — the node adds it to every call. Use ${base.replace(/\/v1$/i, '')}.`,
+		};
 	}
 	if (/(^|\/)admin(\/|$)/i.test(pathname)) {
 		return {
@@ -65,6 +79,13 @@ export async function testSocialMateConnection(
 		if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
 			return { status: 'Error', message: `Cannot resolve the host in ${base}. Check the Server URL.` };
 		}
+		if (base.startsWith('https://') && isPlainHttpOnTls(error, code)) {
+			const implicit = !/^\s*https:\/\//i.test(rawBaseUrl);
+			return {
+				status: 'Error',
+				message: `${implicit ? 'The Server URL has no http:// or https://, so https:// was assumed — but this' : 'This'} address answers plain HTTP, not HTTPS. Use ${base.replace(/^https:\/\//, 'http://')}.`,
+			};
+		}
 		return { status: 'Error', message: `Cannot reach SocialMate at ${base}: ${(error as Error).message}` };
 	}
 
@@ -89,14 +110,12 @@ export async function testSocialMateConnection(
 		const version = typeof payload.version === 'string' ? ` ${payload.version}` : '';
 		let message = `Connected to SocialMate${version} (${tier} tier).`;
 		// The Trigger registers its webhook with POST /v1/webhooks (admin scope).
-		// Capabilities reports, per tool, whether THIS key may call it.
-		const features = asObject(payload.features) ?? {};
-		const tools = Array.isArray(payload.tools) ? (payload.tools as IDataObject[]) : [];
-		const adminTool = tools.find(
-			(t) => t.requiresAdminKey === true && (!t.feature || Boolean(features[t.feature as string])),
-		);
-		if (adminTool && adminTool.available === false) {
-			message += ' This key has no admin scope, so the SocialMate Trigger cannot register its webhook; actions still work.';
+		// Reading the per-tool `available` flags from capabilities is not enough:
+		// on Free every admin tool is ALSO tier-gated, so `available: false` can't
+		// tell "no admin scope" from "not Pro". GET /v1/webhooks needs the same
+		// admin scope on every tier and changes nothing, so ask it directly.
+		if ((await probeAdminScope(base, apiKey, request)) === false) {
+			message += ' This key has no admin scope, so the SocialMate Trigger cannot register its webhook; actions still work. Create an admin-scope key in SocialMate → API & Integrations if you use the Trigger.';
 		}
 		return { status: 'OK', message };
 	}
@@ -111,6 +130,37 @@ export async function testSocialMateConnection(
 		status: 'Error',
 		message: `SocialMate answered HTTP ${status || 'with no status'}${serverMessage ? `: ${serverMessage}` : ''}.`,
 	};
+}
+
+/**
+ * Whether the key has admin scope: `false` only on the server's explicit
+ * 403 `insufficient_scope`; `true` on 2xx; `undefined` when the probe could not
+ * tell (network error, an older server, anything else) — then we stay silent.
+ */
+async function probeAdminScope(base: string, apiKey: string, request: LegacyRequest): Promise<boolean | undefined> {
+	try {
+		const res = (await request({
+			method: 'GET',
+			uri: `${base}/v1/webhooks`,
+			headers: { 'x-api-key': apiKey, Accept: 'application/json' },
+			json: true,
+			simple: false,
+			resolveWithFullResponse: true,
+			timeout: 15_000,
+		})) as { statusCode?: number; body?: unknown };
+		const status = Number(res?.statusCode ?? 0);
+		if (status >= 200 && status < 300) return true;
+		if (status === 403) {
+			// v1.1 envelope `{ error: { code, required } }`, or the flat legacy shape.
+			const body = asObject(res?.body) ?? {};
+			const inner = asObject(body.error) ?? body;
+			const code = typeof body.error === 'string' ? body.error : inner.code;
+			return code === 'insufficient_scope' && (inner.required ?? 'admin') === 'admin' ? false : undefined;
+		}
+		return undefined;
+	} catch {
+		return undefined;
+	}
 }
 
 /** `methods.credentialTest.socialMateApiTest` — wired via `testedBy` on both nodes. */
