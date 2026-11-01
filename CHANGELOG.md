@@ -77,6 +77,9 @@ Every new operation and event is Pro; a Free server answers `402`.
 - On Free, the Trigger's Events help and the README now say what happens: picking a `(Pro)` event
   makes activation fail with a "requires Pro" error naming the event, and Free has 2 webhook
   endpoints in total (a "Listen for test event" listener takes one).
+- Account → **Get Proxy** said "Requires Pro"; the read is available on every tier (read-scope
+  key). **Clear Proxy** said it was never license-gated; like Set Proxy it requires Pro and an
+  admin-scope key.
 - `npm run test:live` printed `(?)` for the first account: it read `state`; the list returns `status`.
 - **The AI-agent examples run.** `examples/ai-agent-tool.json` and `examples/mcp-server-trigger.json`
   wired the plain `socialMate` node into the agent's Tool input, so every run failed with "Node does
