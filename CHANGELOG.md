@@ -20,7 +20,7 @@ Every new operation and event is Pro; a Free server answers `402`.
   `agent.approval_requested`, `agent.approval_decided`, `agent.handoff_requested`,
   `agent.handoff_resolved`, `agent.paused`, `agent.resumed`, `agent.budget_warning`,
   `agent.injection_detected`, `agent.job_failed`, `agent.lead_captured`, `connector.revoked`.
-- **Contract drift guard:** the fixture is synced to app 2.0.2 (99 endpoints, 48 events). App
+- **Contract drift guard:** the fixture is synced to app 3.0.0 (99 endpoints, 48 events). App
   endpoints the node deliberately does not call (agent create/delete, run logs, conversations, chat
   messages, per-contact memory, knowledge delete, `/v1/ai/settings`, `/v1/ai/senses*`,
   `/v1/connectors/wordpress*`) sit in a commented exemption list, checked so it cannot go stale —
@@ -30,6 +30,8 @@ Every new operation and event is Pro; a Free server answers `402`.
 ### Changed
 - README: Agent row in the Free-vs-Pro table, agent events in the event list, Agent scopes in the
   scope list, and the MCP server's tool count (44 → 59, as `socialmate-mcp` gains the agent tools).
+- The scheduled-reminders example is renamed `examples/scheduled-bulk-send.json` →
+  `examples/scheduled-batch-send.json` (same workflow; "batch" is the product's word for it).
 
 ## [2.7.1] — 2026-07-14
 

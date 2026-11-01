@@ -1,5 +1,5 @@
 {
-  "id": "socialmateScheduledBulk1",
+  "id": "socialmateScheduledBatch1",
   "name": "Scheduled Reminders (Schedule → SocialMate Queue a Batch)",
   "nodes": [
     {

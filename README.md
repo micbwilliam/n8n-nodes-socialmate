@@ -66,7 +66,7 @@ an "All accounts" key).
 
 ## Nodes
 
-- **SocialMate** (action) — Message, Chat, Contact, Group, Media, Queue, Account, Sync, Webhook, API Key and System operations.
+- **SocialMate** (action) — Message, Chat, Contact, Group, Media, Queue, Account, Agent, Sync, Webhook, API Key and System operations.
 - **SocialMate Trigger** — fires your workflow on SocialMate events. It self-registers its webhook with the server and verifies the HMAC signature on every delivery.
 
 ### Operations — Free vs Pro
@@ -323,7 +323,7 @@ Importable workflows live in [`examples/`](examples/):
 - [`mcp-server-trigger.json`](examples/mcp-server-trigger.json) — **WhatsApp MCP server built in n8n**: expose SocialMate to Claude Desktop / Cursor via the MCP Server Trigger.
 - [`real-estate-deepseek-agent.json`](examples/real-estate-deepseek-agent.json) — a WhatsApp AI concierge (Trigger → Get AI Context → DeepSeek → reply).
 - [`auto-reply-trigger.json`](examples/auto-reply-trigger.json) — a minimal Trigger → Send Text auto-reply round-trip.
-- [`scheduled-bulk-send.json`](examples/scheduled-bulk-send.json) — schedule a daily batch of queued, *personalised* reminders to opted-in contacts via the smart queue (Pro). One individual message per person, paced by the anti-ban engine — not a broadcast.
+- [`scheduled-batch-send.json`](examples/scheduled-batch-send.json) — schedule a daily batch of queued, *personalised* reminders to opted-in contacts via the smart queue (Pro). One individual message per person, paced by the anti-ban engine — not a broadcast.
 - [`keyword-router.json`](examples/keyword-router.json) — Trigger → IF on the message text → route to different replies (extend with more branches).
 - [`drip-onboarding-sequence.json`](examples/drip-onboarding-sequence.json) — Trigger → three scheduled Queue Enqueues that drip a welcome sequence over a few days (Pro).
 - [`order-confirmation-webhook.json`](examples/order-confirmation-webhook.json) — your store's order webhook → Send Text order confirmation.
