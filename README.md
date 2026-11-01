@@ -34,14 +34,21 @@ npm install n8n-nodes-socialmate
    scope, and SocialMate mints an API key (and a self-registering webhook) for it. Use an
    **admin**-scope key if you want the Trigger to register its webhook automatically.
 2. In n8n, create a **SocialMate API** credential:
-   - **Server URL** — `http://127.0.0.1:3456` when n8n runs on the **same machine** as the
-     app, or your **named-tunnel** hostname (Pro) for a remote n8n. No trailing slash.
+   - **Server URL** — the API address, without `/v1` or `/admin`, no trailing slash. Pick the
+     one the app's n8n wizard shows under **Reach**:
+     - `http://127.0.0.1:3456` when n8n runs on the **same machine** as SocialMate;
+     - the server's **public address** (e.g. `https://socialmate.example.com` — its domain or
+       `SOCIALMATE_PUBLIC_URL`) when SocialMate runs as a **server** (VPS/Docker) and n8n is
+       elsewhere — available on **every tier**, no tunnel needed;
+     - your **named-tunnel** hostname (**Pro**) when SocialMate is the **desktop app** and n8n
+       is on another machine.
    - **API Key** — the key from step 1.
 3. Click **Test** — you should see your server version and license tier.
 
 > **Quick tunnels are not supported.** A free quick tunnel gets a new
 > `*.trycloudflare.com` URL on every restart, which breaks a saved credential. Run n8n on
-> the same machine as the app (localhost) or use a stable **named tunnel** (Pro).
+> the same machine as the app (localhost), use a server install's public address, or use a
+> stable **named tunnel** (Pro).
 
 ## Account scope (v2.1+)
 
@@ -314,7 +321,7 @@ A **Send Text / Send Media** call resolves one of these ways. The first three ar
 Free covers text send, reads (chats/contacts/accounts/media), live webhooks, and
 webhook/API-key management — one account. Pro adds media send, group management,
 scheduling and opt-in batch sending, message history/search, sync, the smart queue, unlimited accounts
-and a stable named tunnel.
+and a stable named tunnel for the desktop app (a server install's public address works on Free).
 
 Free is capped at **200 sends/day**; Pro starts at **500/day** per account and scales to
 **up to 5,000/day** in High-Volume Mode (after 72h warming).

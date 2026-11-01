@@ -44,6 +44,19 @@ Every new operation and event is Pro; a Free server answers `402`.
   `examples/scheduled-batch-send.json` (same workflow; "batch" is the product's word for it).
 
 ### Fixed
+- **The credential Test warns about a missing admin scope on Free too.** It decided from the
+  per-tool flags in `/v1/capabilities`, but on Free every admin tool is also tier-gated, so a
+  read+send key tested green with no warning and the Trigger then failed to register its webhook
+  (403 `insufficient_scope`). The Test now asks `GET /v1/webhooks` — admin scope on every tier, and
+  changes nothing — and warns whenever the server answers `insufficient_scope`.
+- **The credential Test explains two common Server URL typos.** A trailing `/v1` is named ("remove
+  /v1", instead of `404 Route GET:/v1/v1/capabilities not found`), and an address typed without a
+  scheme that answers plain HTTP suggests `http://…` instead of a raw OpenSSL "packet length too
+  long" error.
+- **Remote reach matches the 3.0 server.** The credential's Server URL help, the README, the Test's
+  hints and the example notes said a remote n8n needs a named tunnel (Pro). A SocialMate *server*
+  install is reached at its public address (its domain / `SOCIALMATE_PUBLIC_URL`) on every tier; the
+  named tunnel (Pro) is for the desktop app.
 - **An invalid Scheduled At no longer sends immediately.** On Queue: **Enqueue** and **Queue a
   Batch**, a Scheduled At that did not parse as a date-time was sent as `scheduledAt: null` — "as
   soon as possible" — so a mistyped schedule went out at once. The item now fails with "Scheduled

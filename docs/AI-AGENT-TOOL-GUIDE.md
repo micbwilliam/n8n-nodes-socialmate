@@ -104,7 +104,8 @@ app's local REST API, so there is **nothing to enable in the app** — just crea
   ```
 
 - **Remote** — for an agent on another machine, run the same `socialmate-mcp` next to the agent and
-  set `SOCIALMATE_BASE_URL` to your **Pro named tunnel** host (e.g. `https://<your-tunnel>`); the
+  set `SOCIALMATE_BASE_URL` to a server install's **public address** (any tier) or a desktop app's
+  **Pro named tunnel** host (e.g. `https://<your-tunnel>`); the
   `x-api-key` auth applies over the wire.
 
 Every MCP tool respects the API key's **scope** (read / send / admin) and your **tier** exactly like

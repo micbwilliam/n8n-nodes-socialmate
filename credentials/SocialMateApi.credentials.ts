@@ -9,8 +9,8 @@ import type {
  * SocialMate API credential.
  *
  * Connects n8n to a self-hosted SocialMate desktop server over its local HTTP
- * API (default `http://127.0.0.1:3456`, or a named-tunnel hostname for remote
- * reach). Authentication is a single API key sent in the `x-api-key` header.
+ * API (default `http://127.0.0.1:3456`; for remote reach, a server install's
+ * public address or a desktop app's named-tunnel hostname (Pro)). Authentication is a single API key sent in the `x-api-key` header.
  *
  * The API key carries its own **account scope** (This account / Selected / All),
  * set when the connection is created in the app. The node never needs a
@@ -37,7 +37,7 @@ export class SocialMateApi implements ICredentialType {
 			placeholder: 'https://api.your-domain.com',
 			required: true,
 			description:
-				'Base URL of your SocialMate server. Only stable URLs are supported: use http://127.0.0.1:3456 when n8n runs on the SAME machine as the app, or your NAMED-TUNNEL hostname (Pro) for a remote n8n. Quick/ephemeral tunnels (*.trycloudflare.com) are NOT supported — their URL rotates on every restart and breaks the saved connection. Do not include a trailing slash. Find this in SocialMate → API & Integrations → n8n → New connection.',
+				'Base URL of your SocialMate server — the API address, without /v1 or /admin. Only stable URLs are supported: use http://127.0.0.1:3456 when n8n runs on the SAME machine as SocialMate; for a remote n8n, use a SocialMate server\'s PUBLIC ADDRESS (its domain or SOCIALMATE_PUBLIC_URL — any tier) or a desktop app\'s NAMED-TUNNEL hostname (Pro). Quick/ephemeral tunnels (*.trycloudflare.com) are NOT supported — their URL rotates on every restart and breaks the saved connection. Do not include a trailing slash. Find this in SocialMate → API & Integrations → n8n → New connection.',
 		},
 		{
 			displayName: 'API Key',

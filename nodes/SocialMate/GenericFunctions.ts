@@ -60,7 +60,7 @@ export function normalizeBaseUrl(raw?: string | null): string {
  * Resolve the base URL for this run.
  *
  * Only stable addresses are supported: a localhost address (app + n8n on the
- * same machine) or a named-tunnel hostname. The value is simply the
+ * same machine), a server install's public address, or a named-tunnel hostname. The value is simply the
  * credential's Server URL (normalised), or the localhost default. Rotating
  * quick tunnels (*.trycloudflare.com) are intentionally NOT supported — their
  * URL changes on every restart and would leave a stored credential stale.

@@ -31,7 +31,7 @@
     },
     {
       "parameters": {
-        "content": "## WhatsApp Auto-Reply\n\n**Flow:** an inbound WhatsApp message fires the **SocialMate Trigger** → **Send Auto-Reply** sends a canned acknowledgement back to the same chat.\n\n**Setup:**\n1. Create one **SocialMate API** credential (Server URL `http://127.0.0.1:3456` if n8n is on the same machine, or your named-tunnel hostname). An **admin**-scope key lets the Trigger register its own webhook.\n2. Edit the reply text in **Send Auto-Reply**.\n3. **Save & Activate**, then message the connected number to test.\n\nText send works on **Free**. The reply still passes through the anti-ban engine.",
+        "content": "## WhatsApp Auto-Reply\n\n**Flow:** an inbound WhatsApp message fires the **SocialMate Trigger** → **Send Auto-Reply** sends a canned acknowledgement back to the same chat.\n\n**Setup:**\n1. Create one **SocialMate API** credential (Server URL `http://127.0.0.1:3456` if n8n is on the same machine, else your server's public address or your named-tunnel hostname). An **admin**-scope key lets the Trigger register its own webhook.\n2. Edit the reply text in **Send Auto-Reply**.\n3. **Save & Activate**, then message the connected number to test.\n\nText send works on **Free**. The reply still passes through the anti-ban engine.",
         "height": 280,
         "width": 420
       },
