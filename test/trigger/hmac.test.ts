@@ -24,6 +24,7 @@ function makeWebhookCtx(opts: {
 	verifySignature?: boolean;
 	filterAccountId?: string;
 	secret?: string;
+	noSecret?: boolean;
 }): { ctx: Record<string, unknown>; captured: Captured } {
 	const captured: Captured = {};
 	const ctx = {
@@ -40,7 +41,7 @@ function makeWebhookCtx(opts: {
 						...(opts.filterAccountId ? { accountId: opts.filterAccountId } : {}),
 				  }
 				: fallback,
-		getWorkflowStaticData: () => ({ secret: opts.secret ?? SECRET }),
+		getWorkflowStaticData: () => (opts.noSecret ? {} : { secret: opts.secret ?? SECRET }),
 		getResponseObject: () => ({
 			status: (code: number) => {
 				captured.status = code;
@@ -96,5 +97,20 @@ describe('SocialMateTrigger.webhook — HMAC signature verification', () => {
 		});
 		const res = await trigger.webhook.call(ctx as never);
 		expect(res.workflowData).toEqual([]);
+	});
+
+	it('fails closed when Verify Signature is on but no secret is stored (an adopted endpoint)', async () => {
+		const { ctx, captured } = makeWebhookCtx({ rawBody, body, timestamp, signature: '', noSecret: true });
+		const res = await trigger.webhook.call(ctx as never);
+		expect(res.noWebhookResponse).toBe(true);
+		expect(res.workflowData).toBeUndefined();
+		expect(captured.status).toBe(401);
+		expect(captured.json).toMatchObject({ error: 'no_signing_secret' });
+	});
+
+	it('still accepts unsigned deliveries when the user turned Verify Signature off', async () => {
+		const { ctx } = makeWebhookCtx({ rawBody, body, timestamp, signature: '', noSecret: true, verifySignature: false });
+		const res = await trigger.webhook.call(ctx as never);
+		expect(res.workflowData).toBeDefined();
 	});
 });

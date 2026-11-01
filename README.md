@@ -85,7 +85,7 @@ Operations marked **Pro** require a SocialMate Pro license; on Free they return 
 | **Account** | Get Many · Get · Get Anti-Ban Status · Get Proxy (masked) | Set Proxy · Clear Proxy *(need an `admin`-scope key)* |
 | **Agent** (the Claude Agent — SocialMate's built-in AI agent, built on Anthropic's Claude Agent SDK; model of your choice) | — | Get Many · Get · Get Usage · Get Usage Summary · Get Approvals · Get Handoffs · Get Knowledge · Send Event *(`send` scope)* · Update · Pause · Resume · Decide Approval · Take Over Chat · Release Chat · Reply in Chat · Add Knowledge *(these last eight need an `admin`-scope key)* |
 | **Sync** | Get Status | Trigger |
-| **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries | — |
+| **Webhook** | Get Many · Get · Create · Update · Delete · Test · Get Deliveries *(Free: 2 endpoints in total, Free events only)* | — |
 | **API Key** | Get Many · Create · Rotate · Delete | — |
 | **System** | Get Capabilities · Get Status · Get Network Status · Get Version | — |
 
@@ -166,7 +166,11 @@ The **SocialMate Trigger** covers all **48 events**. **9 are available on Free**
 `message.delivered` / `message.read`, the conversational events `message.reaction` /
 `poll.vote` / `group.participants_updated`, the Agent Memory `media.context_updated` event,
 the High-Volume Mode `account.danger_mode_*` events and the 13 Claude Agent events) require
-Pro and are labelled `(Pro)` in the picker:
+Pro and are labelled `(Pro)` in the picker. On a Free server, picking a `(Pro)` event makes
+activation fail with a "requires Pro" error naming the event — it is refused, not silently
+filtered. Free also allows **2 webhook endpoints in total** (disabled endpoints count), and
+n8n's **Listen for test event** registers a separate endpoint of its own while it listens, so
+two active Triggers plus a test listener exceed the Free cap:
 
 - **Messaging:** `message.received`, `message.sent`, `message.delivered` (Pro), `message.read` (Pro), `message.reaction` (Pro), `poll.vote` (Pro)
 - **Groups:** `group.participants_updated` (Pro) — join, leave, promote, demote

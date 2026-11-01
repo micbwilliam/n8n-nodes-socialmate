@@ -104,7 +104,7 @@ export class SocialMateTrigger implements INodeType {
 				type: 'multiOptions',
 				required: true,
 				default: ['message.received'],
-				description: 'Which SocialMate events should start this workflow. "(Pro)" events are only delivered when the server is on a Pro tier.',
+				description: 'Which SocialMate events should start this workflow. "(Pro)" events need a Pro server: on Free, picking any of them makes activation fail with a "requires Pro" error naming the event — they are refused, not silently filtered. Free also allows 2 webhook endpoints in total, and "Listen for test event" registers one of its own while it listens.',
 				options: EVENT_OPTIONS,
 			},
 			{
@@ -142,12 +142,38 @@ export class SocialMateTrigger implements INodeType {
 			async checkExists(this: IHookFunctions): Promise<boolean> {
 				const webhookUrl = this.getNodeWebhookUrl('default');
 				const staticData = this.getWorkflowStaticData('node');
-				const endpoints = (await socialmateApiRequest.call(this, 'GET', '/v1/webhooks')) as Array<{ id: string; url: string }>;
+				const endpoints = (await socialmateApiRequest.call(this, 'GET', '/v1/webhooks')) as Array<{
+					id: string;
+					url: string;
+					events?: string[];
+				}>;
 				const existing = (endpoints ?? []).find((e) => e.url === webhookUrl);
-				if (existing) {
-					staticData.webhookId = existing.id;
+				if (!existing) return false;
+
+				// Ours only if WE created it: same id, and we still hold its signing
+				// secret. An endpoint that merely has our URL — one the app's n8n
+				// wizard created, or one left behind when a DELETE failed while the
+				// app was closed — has a secret we never saw, so adopting it would
+				// switch HMAC verification off without telling anyone, and keep that
+				// endpoint's event list instead of this node's.
+				if (staticData.secret && existing.id === staticData.webhookId) {
+					const events = this.getNodeParameter('events', []) as string[];
+					const current = existing.events ?? [];
+					const same = current.length === events.length && events.every((e) => current.includes(e));
+					if (!same) {
+						await socialmateApiRequest.call(this, 'PATCH', `/v1/webhooks/${existing.id}`, { events });
+					}
 					return true;
 				}
+
+				// Replace it: create() registers a fresh secret and the current events.
+				try {
+					await socialmateApiRequest.call(this, 'DELETE', `/v1/webhooks/${existing.id}`);
+				} catch {
+					// Best-effort — create() still registers our own endpoint.
+				}
+				delete staticData.webhookId;
+				delete staticData.secret;
 				return false;
 			},
 
@@ -197,7 +223,19 @@ export class SocialMateTrigger implements INodeType {
 		const secret = nodeStaticData.secret as string | undefined;
 
 		// ── Signature verification ──
+		// Fail closed: with Verify Signature on and no stored secret there is
+		// nothing to check against, and letting the delivery through would accept
+		// forged events from anyone who learns this URL.
 		const verify = options.verifySignature !== false;
+		if (verify && !secret) {
+			const res = this.getResponseObject();
+			res.status(401).json({
+				error: 'no_signing_secret',
+				message:
+					'This SocialMate Trigger has no signing secret. Deactivate and re-activate the workflow so it registers one, or turn off Verify Signature.',
+			});
+			return { noWebhookResponse: true };
+		}
 		if (verify && secret) {
 			const signature = (headers['x-socialmate-signature'] as string) ?? '';
 			const timestamp = (headers['x-socialmate-timestamp'] as string) ?? '';

@@ -67,6 +67,16 @@ Every new operation and event is Pro; a Free server answers `402`.
   no admin scope (the Trigger needs one to register its webhook). An operation run against a URL
   that returns HTML now fails with "did not return SocialMate JSON" instead of a bogus account
   count.
+- **The Trigger never adopts an endpoint it did not create.** It used to take over any endpoint
+  with its URL — one made by the app's n8n wizard, or one left behind when deactivating failed
+  while the app was closed — without that endpoint's secret, which silently switched signature
+  verification off and kept the old event list. Such an endpoint is now replaced with a fresh one
+  (new secret, this node's events); the Trigger's own endpoint is re-pointed when the Events
+  selection changed. With **Verify Signature** on and no stored secret, deliveries are refused
+  (`401 no_signing_secret`) instead of accepted unchecked.
+- On Free, the Trigger's Events help and the README now say what happens: picking a `(Pro)` event
+  makes activation fail with a "requires Pro" error naming the event, and Free has 2 webhook
+  endpoints in total (a "Listen for test event" listener takes one).
 - `npm run test:live` printed `(?)` for the first account: it read `state`; the list returns `status`.
 - **The AI-agent examples run.** `examples/ai-agent-tool.json` and `examples/mcp-server-trigger.json`
   wired the plain `socialMate` node into the agent's Tool input, so every run failed with "Node does
