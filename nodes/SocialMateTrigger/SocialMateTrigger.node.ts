@@ -9,6 +9,7 @@ import type {
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 import { socialmateApiRequest } from '../SocialMate/GenericFunctions';
+import { socialMateApiTest } from '../SocialMate/methods/credentialTest';
 
 /**
  * Every event SocialMate can deliver. Pro-only ones are labelled "(Pro)"; an
@@ -87,7 +88,7 @@ export class SocialMateTrigger implements INodeType {
 		defaults: { name: 'SocialMate Trigger' },
 		inputs: [],
 		outputs: ['main'],
-		credentials: [{ name: 'socialMateApi', required: true }],
+		credentials: [{ name: 'socialMateApi', required: true, testedBy: 'socialMateApiTest' }],
 		webhooks: [
 			{
 				name: 'default',
@@ -130,6 +131,10 @@ export class SocialMateTrigger implements INodeType {
 				],
 			},
 		],
+	};
+
+	methods = {
+		credentialTest: { socialMateApiTest },
 	};
 
 	webhookMethods = {

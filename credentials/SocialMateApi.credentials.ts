@@ -1,6 +1,5 @@
 import type {
 	IAuthenticateGeneric,
-	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
 	Icon,
@@ -61,13 +60,8 @@ export class SocialMateApi implements ICredentialType {
 		},
 	};
 
-	// Verifies reachability + key validity in one round-trip. /v1/capabilities
-	// also returns the tier so the credential test surfaces it to the user.
-	test: ICredentialTestRequest = {
-		request: {
-			baseURL: '={{$credentials.baseUrl.replace(new RegExp("/+$"), "")}}',
-			url: '/v1/capabilities',
-			method: 'GET',
-		},
-	};
+	// No declarative `test`: it passed for any server answering 2xx (the /admin
+	// console and n8n itself answer every path with a 200 HTML page). The nodes
+	// declare `testedBy: 'socialMateApiTest'`, which requires the SocialMate
+	// handshake — see nodes/SocialMate/methods/credentialTest.ts.
 }

@@ -15,6 +15,7 @@ import {
 	SocialMateBlockedError,
 } from './GenericFunctions';
 import { getAccounts, getAgents, getChats, getGroups } from './methods/loadOptions';
+import { socialMateApiTest } from './methods/credentialTest';
 import { accountIdProperty } from './descriptions/common';
 import { agentOperations, agentFields } from './descriptions/agent';
 import { messageOperations, messageFields } from './descriptions/message';
@@ -74,7 +75,7 @@ export class SocialMate implements INodeType {
 		defaults: { name: 'SocialMate' },
 		inputs: ['main'],
 		outputs: ['main'],
-		credentials: [{ name: 'socialMateApi', required: true }],
+		credentials: [{ name: 'socialMateApi', required: true, testedBy: 'socialMateApiTest' }],
 		properties: [
 			{
 				displayName: 'Resource',
@@ -127,6 +128,7 @@ export class SocialMate implements INodeType {
 
 	methods = {
 		loadOptions: { getAccounts, getAgents, getChats, getGroups },
+		credentialTest: { socialMateApiTest },
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -146,10 +148,19 @@ export class SocialMate implements INodeType {
 		let scopeCount = legacyDefault ? 1 : -1;
 		if (!legacyDefault) {
 			try {
-				const accs = (await socialmateApiRequest.call(this, 'GET', '/v1/accounts')) as Array<{ id: string }>;
+				const accs = (await socialmateApiRequest.call(this, 'GET', '/v1/accounts')) as unknown;
+				// A Server URL pointing at the /admin console or at n8n itself answers
+				// 200 with an HTML page; its character count is not an account count.
+				if (!Array.isArray(accs)) {
+					throw new NodeOperationError(
+						this.getNode(),
+						'The Server URL did not return SocialMate JSON — point it at the API root (e.g. http://127.0.0.1:3456), not the /admin console or n8n.',
+					);
+				}
 				scopeCount = accs.length;
-				if (accs.length === 1) scopeDefault = accs[0].id;
-			} catch {
+				if (accs.length === 1) scopeDefault = (accs[0] as { id: string }).id;
+			} catch (error) {
+				if (error instanceof NodeOperationError) throw error;
 				// Leave unresolved — a per-operation error is clearer than failing the whole run here.
 			}
 		}

@@ -60,6 +60,13 @@ Every new operation and event is Pro; a Free server answers `402`.
 - A **signal-lane 429** (React / Mark Read / Send Typing, `reason: signal_rate_limit`) is retried
   after its short `retryAfterMs` instead of failing the item; an hourly/daily signal cap still
   fails fast with the server's "try again in Ns" message.
+- **Credential Test** requires a real SocialMate server. It used to pass for anything answering
+  200 — n8n's own URL, or the server's `/admin` console address — and every node then failed
+  (an HTML page was read as "719 accounts"). It now requires the `/v1/capabilities` handshake
+  (`app: "SocialMate"`), names the `/admin` mistake, reports the tier, and warns when the key has
+  no admin scope (the Trigger needs one to register its webhook). An operation run against a URL
+  that returns HTML now fails with "did not return SocialMate JSON" instead of a bogus account
+  count.
 - `npm run test:live` printed `(?)` for the first account: it read `state`; the list returns `status`.
 - **The AI-agent examples run.** `examples/ai-agent-tool.json` and `examples/mcp-server-trigger.json`
   wired the plain `socialMate` node into the agent's Tool input, so every run failed with "Node does

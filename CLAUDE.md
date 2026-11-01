@@ -32,7 +32,7 @@ nodes/SocialMate/
 nodes/SocialMateTrigger/
   SocialMateTrigger.node.ts   # webhook trigger — EVENT_OPTIONS = the 29 events (Free unlabelled, Pro = "(Pro)")
 credentials/
-  SocialMateApi.credentials.ts# baseUrl (default http://127.0.0.1:3456), apiKey; test = GET /v1/capabilities
+  SocialMateApi.credentials.ts# baseUrl (default http://127.0.0.1:3456), apiKey; no declarative test — nodes declare testedBy → methods/credentialTest.ts (requires app:"SocialMate")
 README.md, CHANGELOG.md       # user-facing docs — drift-prone, update on every API/event/tier change
 ```
 
