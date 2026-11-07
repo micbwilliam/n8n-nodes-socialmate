@@ -37,7 +37,7 @@ export class SocialMateApi implements ICredentialType {
 			placeholder: 'https://api.your-domain.com',
 			required: true,
 			description:
-				'Base URL of your SocialMate server — the API address, without /v1 or /admin. Only stable URLs are supported: use http://127.0.0.1:3456 when n8n runs on the SAME machine as SocialMate; for a remote n8n, use a SocialMate server\'s PUBLIC ADDRESS (its domain or SOCIALMATE_PUBLIC_URL — any tier) or a desktop app\'s NAMED-TUNNEL hostname (Pro). Quick/ephemeral tunnels (*.trycloudflare.com) are NOT supported — their URL rotates on every restart and breaks the saved connection. Do not include a trailing slash. Find this in SocialMate → API & Integrations → n8n → New connection.',
+				'Base URL of your SocialMate server — the API address, without /v1 or /admin. Only stable URLs are supported: use http://127.0.0.1:3456 when n8n runs on the SAME machine as SocialMate. n8n in Docker on the same machine: the desktop app listens on this computer only (127.0.0.1), and inside a container 127.0.0.1 is the container itself — with Docker Desktop (any OS) use http://host.docker.internal:3456; with Docker Engine on Linux run the n8n container with --network host and keep http://127.0.0.1:3456. For n8n Cloud or another machine, use a SocialMate server\'s PUBLIC ADDRESS (its domain or SOCIALMATE_PUBLIC_URL — any tier) or a desktop app\'s NAMED-TUNNEL hostname (Pro). Quick/ephemeral tunnels (*.trycloudflare.com) are NOT supported — their URL rotates on every restart and breaks the saved connection. Do not include a trailing slash. Find this in SocialMate → API & Integrations → n8n → New connection.',
 		},
 		{
 			displayName: 'API Key',

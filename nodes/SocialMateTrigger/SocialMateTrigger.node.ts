@@ -104,7 +104,7 @@ export class SocialMateTrigger implements INodeType {
 				type: 'multiOptions',
 				required: true,
 				default: ['message.received'],
-				description: 'Which SocialMate events should start this workflow. "(Pro)" events need a Pro server: on Free, picking any of them makes activation fail with a "requires Pro" error naming the event — they are refused, not silently filtered. Free also allows 2 webhook endpoints in total, and "Listen for test event" registers one of its own while it listens.',
+				description: 'Which SocialMate events should start this workflow. "(Pro)" events need a Pro server: on Free, picking any of them makes activation fail with a "requires Pro" error naming the event — they are refused, not silently filtered. Free also allows 2 webhook endpoints in total, and "Listen for test event" registers one of its own while it listens. Free counts webhook deliveries per endpoint against 100 per UTC day: a message.received or message.sent event is dropped when delivering it to every subscribed endpoint would push the day\'s count past 100 (with 2 endpoints, an event needs 2 free deliveries). The count resets at UTC midnight; account, tunnel and license events are exempt.',
 				options: EVENT_OPTIONS,
 			},
 			{

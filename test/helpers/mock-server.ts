@@ -18,6 +18,8 @@ import { API_ERRORS, type ApiErrorName, type ErrorEnvelopeFixture } from '../fix
  *  • `/v1/__error__/<name>[?times=N]` — any reply from `API_ERRORS` (copied
  *    from the app's real error replies), for the first N hits (default: every
  *    hit), then a 200 `{ recovered: true }`.
+ *  • `/v1/__html__/<status>` — an HTML error page that did NOT come from
+ *    SocialMate (Cloudflare 530 / error 1033, a proxy's 502/504).
  *
  * Every error body comes from `test/fixtures/api-error-envelopes.ts`, never
  * from a shape written here.
@@ -147,6 +149,13 @@ function route(
 	// ── 402 Pro gate ────────────────────────────────────────────────────────
 	if (method === 'GET' && path === '/v1/__pro__') {
 		return fixture(res, API_ERRORS.licenseRequired);
+	}
+
+	// ── A non-SocialMate HTML error page (Cloudflare 530 / 1033, a proxy's 502) ─
+	const htmlRoute = /^\/v1\/__html__\/(\d{3})$/.exec(path);
+	if (htmlRoute) {
+		res.writeHead(Number(htmlRoute[1]), { 'content-type': 'text/html' });
+		return res.end('<!DOCTYPE html><html><body>error code: 1033</body></html>');
 	}
 
 	// ── Any real error reply, for the first `times` hits ────────────────────

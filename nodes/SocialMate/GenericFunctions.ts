@@ -90,6 +90,24 @@ export interface SocialMateErrorInfo {
 	inner: IDataObject;
 	/** Response headers, lower-cased. Usually empty under real n8n (see below). */
 	headers: IDataObject;
+	/**
+	 * What the response body was: `json` (SocialMate's shape, or any JSON),
+	 * `foreign` (a body that arrived and is NOT JSON — an HTML page, plain text,
+	 * undecodable bytes) or `none` (no body reached us — e.g. an n8n build whose
+	 * error wrapper drops it). Only `foreign` proves another program answered.
+	 */
+	bodyKind: 'json' | 'foreign' | 'none';
+}
+
+/** Classify one raw response-body candidate: JSON, a non-JSON body, or absent. */
+export function bodyKindOf(value: unknown): 'json' | 'foreign' | 'none' {
+	if (value === undefined || value === null) return 'none';
+	if (Buffer.isBuffer(value) || value instanceof ArrayBuffer) {
+		return isJsonText(Buffer.from(value as Buffer).toString('utf8')) ? 'json' : 'foreign';
+	}
+	if (typeof value === 'string') return isJsonText(value) ? 'json' : 'foreign';
+	if (typeof value === 'object') return 'json';
+	return 'none';
 }
 
 export function asObject(value: unknown): IDataObject | undefined {
@@ -104,6 +122,15 @@ export function asObject(value: unknown): IDataObject | undefined {
 		}
 	}
 	return undefined;
+}
+
+function isJsonText(text: string): boolean {
+	try {
+		JSON.parse(text);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 function asStatus(value: unknown): number {
@@ -136,6 +163,7 @@ export function readSocialMateError(error: unknown): SocialMateErrorInfo {
 		cause?: unknown;
 		errorResponse?: unknown;
 		context?: { data?: unknown };
+		description?: unknown;
 	};
 	const top = (error ?? {}) as Loose;
 	const layers = [top, top.cause, top.errorResponse].filter(
@@ -146,8 +174,18 @@ export function readSocialMateError(error: unknown): SocialMateErrorInfo {
 	let body: IDataObject | undefined;
 	let headers: IDataObject | undefined;
 	let netCode: string | undefined;
+	let bodyKind: 'json' | 'foreign' | 'none' = 'none';
+	const noteKind = (value: unknown): void => {
+		const kind = bodyKindOf(value);
+		if (kind === 'json' || (kind === 'foreign' && bodyKind === 'none')) bodyKind = kind;
+	};
 	for (const layer of layers) {
 		const res = layer.response && typeof layer.response === 'object' ? layer.response : undefined;
+		// `layer.error` is left out: it is a legacy body slot on some shapes but a
+		// plain message on others, so a string there proves nothing.
+		noteKind(res?.data);
+		noteKind(res?.body);
+		if (asObject(layer.error)) bodyKind = 'json';
 		status ||= asStatus(res?.status) || asStatus(res?.statusCode) || asStatus(layer.statusCode) || asStatus(layer.status);
 		body ??= asObject(res?.data) ?? asObject(res?.body) ?? asObject(layer.error);
 		headers ??= asObject(res?.headers);
@@ -160,7 +198,25 @@ export function readSocialMateError(error: unknown): SocialMateErrorInfo {
 		if (!status && fromHttpCode) status = fromHttpCode;
 		else if (!fromHttpCode && typeof top.httpCode === 'string' && /^E[A-Z_]+$/.test(top.httpCode)) netCode ??= top.httpCode;
 	}
+	noteKind(top.context?.data);
 	body ??= asObject(top.context?.data) ?? {};
+	// Current n8n (NodeApiError over an AxiosError) copies the body to
+	// `context.data` ONLY when it is a plain object, and drops a string body
+	// entirely. So a wrapper that has the `context` slot but no `data`, whose
+	// description is still axios' own "Request failed with status code N" (no
+	// body message to lift), got a NON-object body: an HTML/text page. A bare
+	// `{ httpCode }` with no context slot stays `none` — that build may simply
+	// not carry bodies, and a real SocialMate 401/429 must keep its branch.
+	if (
+		bodyKind === 'none' &&
+		top.context &&
+		typeof top.context === 'object' &&
+		!('data' in top.context) &&
+		typeof top.description === 'string' &&
+		/^Request failed with status code \d{3}$/.test(top.description)
+	) {
+		bodyKind = 'foreign';
+	}
 
 	const lowered: IDataObject = {};
 	for (const [k, v] of Object.entries(headers ?? {})) lowered[k.toLowerCase()] = v;
@@ -171,6 +227,7 @@ export function readSocialMateError(error: unknown): SocialMateErrorInfo {
 		body,
 		inner: asObject(body.error) ?? {},
 		headers: lowered,
+		bodyKind: status ? bodyKind : 'none',
 	};
 }
 
@@ -182,17 +239,103 @@ export function readSocialMateError(error: unknown): SocialMateErrorInfo {
  * "Forbidden - perhaps check your credentials?".
  */
 function throwApiError(ctx: RequestContext, info: SocialMateErrorInfo, message: string, description?: string): never {
+	throw buildApiError(ctx, info, message, description);
+}
+
+function buildApiError(ctx: RequestContext, info: SocialMateErrorInfo, message: string, description?: string): NodeApiError {
 	const httpCode = info.status ? String(info.status) : undefined;
 	const code = typeof info.inner.code === 'string' ? info.inner.code : undefined;
-	throw new NodeApiError(
+	return new NodeApiError(
 		ctx.getNode(),
 		{ message, ...(description ? { description } : {}), ...(code ? { code } : {}), ...(httpCode ? { httpCode } : {}) } as JsonObject,
 		{ message, description, ...(httpCode ? { httpCode } : {}) },
 	);
 }
 
+/** Whether a URL's host is this machine's loopback (where a container's 127.0.0.1 is the container itself). */
+export function isLoopbackUrl(url: string): boolean {
+	try {
+		const host = new URL(url).hostname.toLowerCase().replace(/^\[|\]$/g, '');
+		return host === 'localhost' || host === '::1' || /^127(\.\d{1,3}){3}$/.test(host);
+	} catch {
+		return false;
+	}
+}
+
+/** Whether a URL is a rotating Cloudflare quick tunnel (`*.trycloudflare.com`). */
+export function isQuickTunnelUrl(url: string): boolean {
+	try {
+		const host = new URL(url).hostname.toLowerCase().replace(/\.$/, '');
+		return host === 'trycloudflare.com' || host.endsWith('.trycloudflare.com');
+	} catch {
+		return false;
+	}
+}
+
+export const DOCKER_LOOPBACK_HINT =
+	'If n8n runs in Docker, 127.0.0.1 is the container, not this computer: with Docker Desktop (any OS) use http://host.docker.internal:3456; with Docker Engine on Linux run the n8n container with --network host.';
+
+/**
+ * Whether an HTTP error did NOT come from SocialMate, which answers every error
+ * as JSON: an empty or non-JSON body is a Cloudflare 530 / 1033 page, Cloudflare
+ * Access's 401 login page, a WAF 403, a Cloudflare 1015 429, a proxy's 502/504
+ * or another program on the port.
+ */
+export function isForeignErrorBody(info: SocialMateErrorInfo): boolean {
+	// `none` (no body reached us) is NOT foreign: on an n8n build that drops the
+	// body, a genuine SocialMate 401/403/429 must keep its status branch + retries.
+	return info.status > 0 && info.bodyKind === 'foreign';
+}
+
+const NOT_SOCIALMATE = Symbol('socialmate.notSocialMate');
+
+/** Whether an error is the request layer's "something other than SocialMate answered". */
+export function isNotSocialMateError(error: unknown): boolean {
+	return !!error && typeof error === 'object' && (error as Record<symbol, unknown>)[NOT_SOCIALMATE] === true;
+}
+
+/** The "this is not SocialMate" error, for both a foreign error page and a foreign 200 page. */
+function throwNotSocialMate(ctx: RequestContext, info: SocialMateErrorInfo, baseUrl: string): never {
+	const where = baseUrl || 'the Server URL';
+	const status = info.status;
+	let error: NodeApiError;
+	if (status >= 200 && status < 300) {
+		// A 2xx page: the address answers, it is just not the API (the /admin
+		// console, n8n's own UI, a captive portal).
+		// A 2xx is not an HTTP failure — don't label it with httpCode 200.
+		error = buildApiError(
+			ctx,
+			{ ...info, status: 0 },
+			`The Server URL did not return SocialMate JSON (${where}) — point it at the API root (e.g. http://127.0.0.1:3456), not the /admin console or n8n.`,
+			isQuickTunnelUrl(baseUrl) ? QUICK_TUNNEL_HINT : undefined,
+		);
+		(error as unknown as Record<symbol, unknown>)[NOT_SOCIALMATE] = true;
+		throw error;
+	}
+	error = buildApiError(
+		ctx,
+		info,
+		isLoopbackUrl(baseUrl)
+			? `SocialMate isn't reachable at ${where} (HTTP ${status}) — something other than SocialMate answered on that port`
+			: `SocialMate isn't reachable at ${where} (HTTP ${status}) — if this is a quick-tunnel URL it changed when the app restarted`,
+		isQuickTunnelUrl(baseUrl)
+			? `${QUICK_TUNNEL_HINT} Update the Server URL in your credential.`
+			: 'The answer was not from SocialMate. Check that SocialMate is running with its API on (API & Integrations), and that the Server URL in your credential points at it — a quick-tunnel URL (*.trycloudflare.com) changes on every app start; use a named tunnel (Pro) or a local URL.',
+	);
+	(error as unknown as Record<symbol, unknown>)[NOT_SOCIALMATE] = true;
+	throw error;
+}
+
+export const QUICK_TUNNEL_HINT =
+	'Quick-tunnel URLs (*.trycloudflare.com) change every time SocialMate starts — use a named tunnel (Pro) or a local URL.';
+
 /** Map a SocialMate / transport error to a clear n8n error. */
-function toNodeError(ctx: RequestContext, error: unknown, info: SocialMateErrorInfo = readSocialMateError(error)): never {
+function toNodeError(
+	ctx: RequestContext,
+	error: unknown,
+	info: SocialMateErrorInfo = readSocialMateError(error),
+	baseUrl = '',
+): never {
 	const { status, inner, body } = info;
 	const serverMessage =
 		(typeof inner.message === 'string' && inner.message) || (typeof body.error === 'string' && body.error) || '';
@@ -203,9 +346,18 @@ function toNodeError(ctx: RequestContext, error: unknown, info: SocialMateErrorI
 			ctx,
 			info,
 			'Cannot reach the SocialMate server',
-			'Check that SocialMate is running, the API is enabled, the tunnel is online, and the Server URL in your credential is correct.',
+			[
+				'Check that SocialMate is running, the API is enabled, the tunnel is online, and the Server URL in your credential is correct.',
+				info.netCode === 'ECONNREFUSED' && isLoopbackUrl(baseUrl) ? DOCKER_LOOPBACK_HINT : '',
+				isQuickTunnelUrl(baseUrl) ? QUICK_TUNNEL_HINT : '',
+			]
+				.filter((p) => p)
+				.join(' '),
 		);
 	}
+	// Before the status branches: a foreign 401 is not "invalid API key", a
+	// foreign 403 is not a scope problem.
+	if (isForeignErrorBody(info)) throwNotSocialMate(ctx, info, baseUrl);
 	if (status === 401) {
 		throwApiError(
 			ctx,
@@ -339,17 +491,16 @@ export async function socialmateApiRequest(
 	let attempt = 0;
 	// eslint-disable-next-line no-constant-condition
 	while (true) {
+		let response: unknown;
 		try {
-			const response = await this.helpers.httpRequestWithAuthentication.call(
+			response = await this.helpers.httpRequestWithAuthentication.call(
 				this,
 				SOCIALMATE_CREDENTIAL,
 				requestOptions,
 			);
-			if (options.encoding) return response; // raw binary buffer
-			return options.returnEnvelope ? response : unwrapEnvelope(response);
 		} catch (error) {
 			const info = readSocialMateError(error);
-			if (info.status === 429) {
+			if (info.status === 429 && !isForeignErrorBody(info)) {
 				// A 429 is one of three different things:
 				//  • an anti-ban SEND BLOCK (carries `reason`/`upgrade`) — the send
 				//    was refused, so retrying is wrong; blindly sleeping its
@@ -372,8 +523,17 @@ export async function socialmateApiRequest(
 					continue;
 				}
 			}
-			toNodeError(this, error, info);
+			toNodeError(this, error, info, baseUrl);
 		}
+		if (options.encoding) return response; // raw binary buffer (Download File / Thumbnail)
+		// Every SocialMate JSON route answers JSON; a non-empty string that does not
+		// parse is another program's 2xx page (n8n, the /admin console, a captive
+		// portal) — never hand it to the workflow as data. Checked outside the try
+		// so the catch above cannot re-map this error.
+		if (typeof response === 'string' && response.trim() !== '' && !isJsonText(response)) {
+			throwNotSocialMate(this, { status: 200, body: {}, inner: {}, headers: {}, bodyKind: 'foreign' }, baseUrl);
+		}
+		return options.returnEnvelope ? response : unwrapEnvelope(response);
 	}
 }
 

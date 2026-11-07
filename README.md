@@ -36,7 +36,8 @@ npm install n8n-nodes-socialmate
 2. In n8n, create a **SocialMate API** credential:
    - **Server URL** — the API address, without `/v1` or `/admin`, no trailing slash. Pick the
      one the app's n8n wizard shows under **Reach**:
-     - `http://127.0.0.1:3456` when n8n runs on the **same machine** as SocialMate;
+     - `http://127.0.0.1:3456` when n8n runs on the **same machine** as SocialMate (see
+       [n8n in Docker](#n8n-in-docker-on-the-same-machine) below if n8n runs in a container);
      - the server's **public address** (e.g. `https://socialmate.example.com` — its domain or
        `SOCIALMATE_PUBLIC_URL`) when SocialMate runs as a **server** (VPS/Docker) and n8n is
        elsewhere — available on **every tier**, no tunnel needed;
@@ -49,6 +50,17 @@ npm install n8n-nodes-socialmate
 > `*.trycloudflare.com` URL on every restart, which breaks a saved credential. Run n8n on
 > the same machine as the app (localhost), use a server install's public address, or use a
 > stable **named tunnel** (Pro).
+
+### n8n in Docker on the same machine
+
+The desktop app's API listens on this computer only (`127.0.0.1`). Inside a container,
+`127.0.0.1` is the container itself, so the default URL is refused there:
+
+| Where n8n runs | Server URL |
+|---|---|
+| Docker Desktop (any OS) | `http://host.docker.internal:3456` |
+| Docker Engine on Linux | start the n8n container with `--network host` (Compose: `network_mode: host`), then keep `http://127.0.0.1:3456`. `host.docker.internal` over the default bridge network does **not** work on Linux — the app doesn't listen on the bridge address |
+| n8n Cloud, or another machine | a server install's public address, or the desktop app's **named tunnel** (Pro) |
 
 ## Account scope (v2.1+)
 
@@ -177,7 +189,16 @@ Pro and are labelled `(Pro)` in the picker. On a Free server, picking a `(Pro)` 
 activation fail with a "requires Pro" error naming the event — it is refused, not silently
 filtered. Free also allows **2 webhook endpoints in total** (disabled endpoints count), and
 n8n's **Listen for test event** registers a separate endpoint of its own while it listens, so
-two active Triggers plus a test listener exceed the Free cap:
+two active Triggers plus a test listener exceed the Free cap.
+
+> **Free daily delivery quota.** Free counts webhook deliveries **per endpoint**, against
+> **100 per UTC day**. An event is **dropped** (not queued) when delivering it to every endpoint
+> subscribed to it would push the day's count past 100 — so with 2 endpoints, an event needs 2
+> free deliveries (about 50 such events a day). This applies to `message.received` and
+> `message.sent`. The count resets at **00:00 UTC**. The account (`account.connected` /
+> `account.disconnected`), tunnel and license events are exempt and keep arriving. Pro has no daily quota.
+
+The events:
 
 - **Messaging:** `message.received`, `message.sent`, `message.delivered` (Pro), `message.read` (Pro), `message.reaction` (Pro), `poll.vote` (Pro)
 - **Groups:** `group.participants_updated` (Pro) — join, leave, promote, demote

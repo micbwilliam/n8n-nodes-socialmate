@@ -13,6 +13,7 @@ import {
 	normalizeChatId,
 	SOCIALMATE_CREDENTIAL,
 	SocialMateBlockedError,
+	isNotSocialMateError,
 } from './GenericFunctions';
 import { getAccounts, getAgents, getChats, getGroups } from './methods/loadOptions';
 import { socialMateApiTest } from './methods/credentialTest';
@@ -146,11 +147,17 @@ export class SocialMate implements INodeType {
 		const legacyDefault = (creds.accountId as string) || '';
 		let scopeDefault = legacyDefault;
 		let scopeCount = legacyDefault ? 1 : -1;
+		// Set when GET /v1/accounts proved the Server URL is not SocialMate. Thrown
+		// from acc() — i.e. only by items that need an account, and inside the
+		// per-item try, so continueOnFail() turns it into an error item instead of
+		// aborting the whole run (and account-free operations still run).
+		let scopeError: Error | null = null;
 		if (!legacyDefault) {
 			try {
 				const accs = (await socialmateApiRequest.call(this, 'GET', '/v1/accounts')) as unknown;
-				// A Server URL pointing at the /admin console or at n8n itself answers
-				// 200 with an HTML page; its character count is not an account count.
+				// The request layer already refuses a 2xx HTML page (the /admin console,
+				// n8n itself). Anything else that is not an array — a JSON object, a
+				// string that happens to parse — is still not an account list.
 				if (!Array.isArray(accs)) {
 					throw new NodeOperationError(
 						this.getNode(),
@@ -160,8 +167,11 @@ export class SocialMate implements INodeType {
 				scopeCount = accs.length;
 				if (accs.length === 1) scopeDefault = (accs[0] as { id: string }).id;
 			} catch (error) {
-				if (error instanceof NodeOperationError) throw error;
-				// Leave unresolved — a per-operation error is clearer than failing the whole run here.
+				// Not SocialMate at all (an HTML page, a Cloudflare error): remember it,
+				// so an item that needs an account fails with this clear message rather
+				// than "No account is available for this API key".
+				if (error instanceof NodeOperationError || isNotSocialMateError(error)) scopeError = error as Error;
+				// Otherwise leave unresolved — a per-operation error is clearer than failing the whole run here.
 			}
 		}
 
@@ -180,6 +190,7 @@ export class SocialMate implements INodeType {
 					const explicit = (this.getNodeParameter('accountId', i, '') as string) || '';
 					if (explicit) return explicit;
 					if (scopeDefault) return scopeDefault;
+					if (scopeError) throw scopeError;
 					throw new NodeOperationError(
 						this.getNode(),
 						scopeCount > 1

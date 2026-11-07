@@ -166,6 +166,38 @@ describe('credential Test — requires a real SocialMate handshake', () => {
 		expect(handshake.message).toMatch(/^Cannot reach SocialMate at https:\/\/sm\.example\.com: /);
 	});
 
+	it('refuses a quick-tunnel URL without calling it, even one that answers right now', async () => {
+		const { calls, request } = answering(200, CAPABILITIES);
+		const res = await testSocialMateConnection('https://some-words.trycloudflare.com', 'k', request);
+		expect(res.status).toBe('Error');
+		expect(res.message).toMatch(/^Quick-tunnel URLs \(\*\.trycloudflare\.com\) change every time SocialMate starts — use a named tunnel \(Pro\) or a local URL\./);
+		expect(calls).toHaveLength(0);
+	});
+
+	it('a refused 127.0.0.1 / localhost URL names the Docker case', async () => {
+		for (const url of ['http://127.0.0.1:3456', 'http://localhost:3456']) {
+			const res = await testSocialMateConnection(url, 'k', async () => {
+				throw Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+			});
+			expect(res.message).toMatch(/host\.docker\.internal:3456/);
+			expect(res.message).toMatch(/--network host/);
+		}
+		const remote = await testSocialMateConnection('http://10.0.0.5:3456', 'k', async () => {
+			throw Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+		});
+		expect(remote.message).not.toMatch(/docker/i);
+	});
+
+	it('a non-JSON 401 / 403 / 502 / 530 page says SocialMate is not reachable instead of a bare status', async () => {
+		for (const status of [401, 403, 502, 530]) {
+			const res = await testSocialMateConnection('https://sm.example.com', 'k', answering(status, '<html>Bad gateway</html>').request);
+			expect(res.status).toBe('Error');
+			expect(res.message).toMatch(new RegExp(`^SocialMate isn't reachable at https://sm\\.example\\.com \\(HTTP ${status}\\)`));
+			// A Cloudflare Access 401 / WAF 403 page is not a rejected key.
+			expect(res.message).not.toMatch(/Authorization failed|refused this API key/);
+		}
+	});
+
 	it('maps a refused connection', async () => {
 		const res = await testSocialMateConnection('http://127.0.0.1:1', 'k', async () => {
 			throw Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:1'), { code: 'ECONNREFUSED' });
@@ -196,5 +228,50 @@ describe('execute — a Server URL that is not the API root', () => {
 			helpers: { httpRequestWithAuthentication: async () => '<!DOCTYPE html>'.padEnd(719, ' ') },
 		};
 		await expect(new SocialMate().execute.call(ctx as never)).rejects.toThrow(/did not return SocialMate JSON/);
+	});
+});
+
+describe('execute — a foreign answer on GET /v1/accounts', () => {
+	const foreign502 = { statusCode: 502, response: { statusCode: 502, body: '<html>502 Bad Gateway</html>' } };
+	const node = () => ({ id: 't', name: 'SocialMate', type: 'n8n-nodes-socialmate.socialMate', typeVersion: 1, position: [0, 0], parameters: {} });
+	function ctxFor(params: Record<string, unknown>, continueOnFail: boolean, items = 2) {
+		const calls: string[] = [];
+		return {
+			calls,
+			ctx: {
+				getInputData: () => Array.from({ length: items }, () => ({ json: {} })),
+				getNodeParameter: (name: string, _i: number, fallback?: unknown) => (name in params ? params[name] : fallback),
+				getCredentials: async () => ({ baseUrl: 'https://sm.example.com', apiKey: 'k' }),
+				getNode: node,
+				continueOnFail: () => continueOnFail,
+				helpers: {
+					httpRequestWithAuthentication: async (_c: string, o: { url: string }) => {
+						calls.push(o.url);
+						if (o.url.endsWith('/v1/accounts')) throw foreign502;
+						return { data: { app: 'SocialMate', tier: 'free' } };
+					},
+				},
+			},
+		};
+	}
+
+	it('with continueOnFail on, each item that needs an account becomes an error item instead of aborting the run', async () => {
+		const { ctx } = ctxFor({ resource: 'message', operation: 'sendText', chatId: '15551234567', text: 'hi' }, true);
+		const [out] = await new SocialMate().execute.call(ctx as never);
+		expect(out).toHaveLength(2);
+		for (const item of out) expect(String(item.json.error)).toMatch(/^SocialMate isn't reachable at https:\/\/sm\.example\.com \(HTTP 502\)/);
+	});
+
+	it('an operation that needs no account still runs', async () => {
+		const { ctx, calls } = ctxFor({ resource: 'system', operation: 'getCapabilities' }, false, 1);
+		const [out] = await new SocialMate().execute.call(ctx as never);
+		expect(out).toHaveLength(1);
+		expect(out[0].json.app).toBe('SocialMate');
+		expect(calls.some((u) => u.endsWith('/v1/capabilities'))).toBe(true);
+	});
+
+	it('with continueOnFail off, an item that needs an account fails with the not-SocialMate message', async () => {
+		const { ctx } = ctxFor({ resource: 'message', operation: 'sendText', chatId: '15551234567', text: 'hi' }, false);
+		await expect(new SocialMate().execute.call(ctx as never)).rejects.toThrow(/isn't reachable at https:\/\/sm\.example\.com \(HTTP 502\)/);
 	});
 });

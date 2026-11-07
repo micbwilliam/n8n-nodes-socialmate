@@ -5,7 +5,16 @@ import type {
 	INodeCredentialTestResult,
 } from 'n8n-workflow';
 
-import { asObject, normalizeBaseUrl, readSocialMateError } from '../GenericFunctions';
+import {
+	asObject,
+	bodyKindOf,
+	DOCKER_LOOPBACK_HINT,
+	isLoopbackUrl,
+	isQuickTunnelUrl,
+	normalizeBaseUrl,
+	QUICK_TUNNEL_HINT,
+	readSocialMateError,
+} from '../GenericFunctions';
 
 type LegacyRequest = (options: IDataObject) => Promise<unknown>;
 
@@ -61,6 +70,12 @@ export async function testSocialMateConnection(
 		};
 	}
 
+	// Refused even when it answers right now: the saved credential would break on
+	// the next app start, when the quick tunnel comes up under a new hostname.
+	if (isQuickTunnelUrl(base)) {
+		return { status: 'Error', message: `${QUICK_TUNNEL_HINT} ${API_ROOT_HINT}.` };
+	}
+
 	let response: { statusCode?: number; body?: unknown };
 	try {
 		response = (await request({
@@ -78,7 +93,7 @@ export async function testSocialMateConnection(
 		if (code === 'ECONNREFUSED') {
 			return {
 				status: 'Error',
-				message: `${base} refused the connection. Check that SocialMate is running and its local API is on (API & Integrations).`,
+				message: `${base} refused the connection. Check that SocialMate is running and its local API is on (API & Integrations).${isLoopbackUrl(base) ? ` ${DOCKER_LOOPBACK_HINT}` : ''}`,
 			};
 		}
 		if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
@@ -99,6 +114,16 @@ export async function testSocialMateConnection(
 	const inner = asObject(body.error) ?? {};
 	const serverMessage = typeof inner.message === 'string' ? inner.message : '';
 
+	if (status >= 400 && bodyKindOf(response?.body) === 'foreign') {
+		// SocialMate answers every error as JSON; an HTML/empty body is a proxy
+		// (502/504), Cloudflare (530 / error 1033, an Access login 401, a WAF 403)
+		// or another program on the port. Checked before 401/403, which would
+		// otherwise blame the API key.
+		return {
+			status: 'Error',
+			message: `SocialMate isn't reachable at ${base} (HTTP ${status}) — the answer did not come from SocialMate. Check that the app is running with its API on (API & Integrations) and that the Server URL points at it.`,
+		};
+	}
 	if (status === 401) {
 		return {
 			status: 'Error',

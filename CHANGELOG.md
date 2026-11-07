@@ -44,6 +44,31 @@ Every new operation and event is Pro; a Free server answers `402`.
   `examples/scheduled-batch-send.json` (same workflow; "batch" is the product's word for it).
 
 ### Fixed
+- **n8n in Docker on the same machine is explained.** The desktop app's API listens on
+  `127.0.0.1` only, and inside a container that is the container itself. The credential's Server
+  URL help and the README (new "n8n in Docker on the same machine" table) now say: Docker Desktop
+  (any OS) → `http://host.docker.internal:3456`; Docker Engine on Linux → run n8n with
+  `--network host` and keep `http://127.0.0.1:3456`; n8n Cloud / another machine → a server's
+  public address or the named tunnel (Pro). A refused connection to a `127.0.0.1` / `localhost`
+  URL (in the credential Test and in every operation) now names the Docker case.
+- **Quick-tunnel URLs are refused at Test time.** A Server URL on `*.trycloudflare.com` fails the
+  credential Test with "Quick-tunnel URLs change every time SocialMate starts — use a named tunnel
+  (Pro) or a local URL" — it used to test green and then break on the next app start.
+- **A non-SocialMate error page gets a plain message.** A Cloudflare 530 / error-1033 page, a
+  proxy's 502/504 or another program on the port (any error with no JSON body) now reports
+  "SocialMate isn't reachable at <url> (HTTP N) — if this is a quick-tunnel URL it changed when the
+  app restarted" (or "something other than SocialMate answered on that port" for a local URL)
+  instead of n8n's raw "Bad gateway". The credential Test says the same instead of a bare
+  "SocialMate answered HTTP 530".
+- **Free's daily webhook quota is documented** in the README trigger section and the Trigger's
+  Events help: deliveries are counted per endpoint against 100 per UTC day, and a
+  `message.received` / `message.sent` event is dropped when delivering it would push the day's
+  count past 100 (with 2 endpoints, an event needs 2 free deliveries); the count resets at 00:00
+  UTC, and account, tunnel and license events are exempt.
+- The non-SocialMate check runs **before** the 401/403/429 branches, so a Cloudflare Access 401
+  login page, a WAF 403 or a Cloudflare 1015 429 is not reported as a bad key, a missing scope or
+  a rate limit (and a foreign 429 is not retried). A foreign **200** HTML page on a JSON operation
+  is an error instead of being returned as data; Download File / Download Thumbnail are exempt.
 - **The credential Test warns about a missing admin scope on Free too.** It decided from the
   per-tool flags in `/v1/capabilities`, but on Free every admin tool is also tier-gated, so a
   read+send key tested green with no warning and the Trigger then failed to register its webhook
