@@ -1,4 +1,4 @@
-## [2.8.0] — Unreleased
+## [2.8.0] — 2026-11-19
 
 - **Send Event** takes an **Instruction** (the owner's words for the agent) and an **Audience** (customer, or the owner's own number).
 

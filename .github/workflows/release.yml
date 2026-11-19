@@ -10,6 +10,10 @@ name: Release
 # (bumps package.json, commits, creates vX.Y.Z, pushes commit + tag)
 # Or tag by hand:
 #   git tag v2.6.0 && git push origin v2.6.0
+#
+# Auth: npm trusted publishing (OIDC), so there is no token to rotate. One-time
+# setup on npmjs.com: package → Settings → Trusted Publisher → GitHub Actions,
+# repo micbwilliam/n8n-nodes-socialmate, workflow release.yml.
 
 on:
   push:
@@ -17,7 +21,7 @@ on:
 
 permissions:
   contents: write # create the GitHub Release
-  id-token: write # npm provenance via OIDC
+  id-token: write # npm trusted publishing + provenance via OIDC
 
 concurrency:
   group: release-${{ github.ref_name }}
@@ -34,10 +38,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          # Writes an .npmrc wiring `npm publish` auth to NODE_AUTH_TOKEN. (The
-          # old warning against registry-url applied to semantic-release, which
-          # managed its own .npmrc — we publish directly now, so this is correct.)
           registry-url: "https://registry.npmjs.org"
+      # Trusted publishing needs npm 11.5.1 or newer; Node 22 bundles npm 10.
+      - run: npm install -g npm@^11.5.1
       - run: npm install # package-lock.json is gitignored in this repo, so not `npm ci`
       - run: npm run build
       - run: npm run lint
@@ -53,8 +56,6 @@ jobs:
       # artifact. Tools stay installed in node_modules; the repo file is untouched.
       - run: npm pkg delete devDependencies
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
